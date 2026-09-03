@@ -84,7 +84,7 @@ jobs:
           LIVE: ${{ inputs.live }}
         run: |
           set -uo pipefail
-          ARGS="--profile $PROFILE --minutes $MINUTES"
+          ARGS="--profile $PROFILE --minutes $MINUTES --push"
           # The scheduled path trades COMP for real; manual runs opt in.
           if [ "${LIVE}" = "true" ] || [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
             ARGS="$ARGS --live"

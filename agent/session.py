@@ -94,6 +94,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--pin-threshold", type=float, default=0.25)
     ap.add_argument("--publish-interval", type=int, default=600,
                     help="seconds between dashboard refreshes")
+    ap.add_argument("--push", action="store_true",
+                    help="commit and push each refresh; off by default so an unattended "
+                         "session cannot collide with work in progress")
     ap.add_argument("--preclose-minutes", type=int, default=15,
                     help="capture the counterfactual this long before the close")
     args = ap.parse_args(argv)
@@ -150,6 +153,8 @@ def main(argv: list[str] | None = None) -> int:
             publish.OUT.write_text(_json.dumps(payload, indent=2, default=str), encoding="utf-8")
         except Exception as exc:
             _log("publish", f"payload failed: {type(exc).__name__}: {exc}")
+            return
+        if not args.push:
             return
         for cmd in (
             ["git", "add", "-A", "docs", "data/journal"],
