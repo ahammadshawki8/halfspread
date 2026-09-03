@@ -52,7 +52,11 @@ SPREAD_WIDTHS = [1, 2, 3, 5]  # in SPY points; scaled per underlying
 ACCOUNT_EQUITY = 100_000.0
 MAX_LOSS_PER_POSITION = 700.0     # hard cap, dollars
 MAX_LOSS_PER_DAY = 1_400.0        # 1.4% of the account
-MAX_CONCURRENT_POSITIONS = 2
+# The binding constraint on risk is MAX_LOSS_PER_DAY, not the position count.
+# Holding this at 2 left roughly a fifth of the day's budget undeployed while
+# the agent had admissible candidates in front of it. Raising it lets the
+# budget be used; it does not raise the budget.
+MAX_CONCURRENT_POSITIONS = 4
 MIN_NET_EV = 1.0                  # dollars per contract; refuse marginal edges
 
 # ---- candidate admissibility ---------------------------------------------
