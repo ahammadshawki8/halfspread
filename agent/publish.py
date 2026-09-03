@@ -50,15 +50,23 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
     for r in records:
         if r.get("kind") != "observation":
             continue
+        rows = [p for p in r.get("rows", []) if -5.0 <= p["moneyness_pct"] <= 1.0]
+        # A contract quoted with a zero bid has no two-sided market: you cannot
+        # sell it at any price, so its "half-spread" is not a cost, it is the
+        # absence of a market. Charting those as 100% overstates the curve and
+        # hides the shape. They are reported separately as the no-bid region.
+        tradeable = [p for p in rows if (p.get("bid") or 0) > 0]
+        nobid = [p for p in rows if (p.get("bid") or 0) <= 0]
         curves[r["underlying"]] = {
             "ts": r["ts"],
             "reference_level": r.get("reference_level"),
             "points": [
                 {"m": p["moneyness_pct"], "hs": p["half_spread_pct"], "mid": p["mid"],
                  "strike": p["strike"]}
-                for p in r.get("rows", [])
-                if -5.0 <= p["moneyness_pct"] <= 1.0
+                for p in tradeable
             ],
+            "no_bid_count": len(nobid),
+            "no_bid_from_pct": max((p["moneyness_pct"] for p in nobid), default=None),
         }
 
     # ---- widening through the session ------------------------------------

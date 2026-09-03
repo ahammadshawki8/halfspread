@@ -153,11 +153,16 @@ function card(k,v,n,cls,hero){
 function renderLedger(d){
   const L=d.ledger||{}, A=d.account||{};
   const pnl = A.pnl ?? L.realized_pnl ?? 0;
+  const openNow = (d.counts?.fills||0) - (L.positions_resolved||0);
   const avoided = L.exit_cost_avoided_by_settling || 0;
   const adv = L.advantage_from_not_exiting || 0;
   const wr = L.win_rate===null||L.win_rate===undefined ? "—" : (L.win_rate*100).toFixed(0)+"%";
   $("#ledger").innerHTML =
-    card("Account P&L", money(pnl), `against $${(A.starting_equity||100000).toLocaleString()} start`, sign(pnl), true) +
+    card("Account P&L", money(pnl),
+         openNow>0
+           ? `mark-to-market with ${openNow} position${openNow>1?"s":""} still open — settles at expiry`
+           : `against $${(A.starting_equity||100000).toLocaleString()} start`,
+         sign(pnl), true) +
     card("Entry cost paid", money(L.entry_cost_paid||0), "measured before each order, not estimated after") +
     card("Exit cost avoided", money(avoided), "by settling instead of closing", avoided>0?"pos":"") +
     card("Exit cost paid", money(L.exit_cost_paid||0), "only when a short strike was breached", (L.exit_cost_paid||0)>0?"warn":"") +
@@ -193,6 +198,14 @@ function renderCurve(d){
   s+=axes(w,h,pad,xs,ys,v=>v.toFixed(1)+"%",v=>v.toFixed(0)+"%");
   s+=`<line class="gl" x1="${X(0)}" y1="${pad.t}" x2="${X(0)}" y2="${h-pad.b}" stroke-dasharray="3 3"/>
       <text class="lbl" x="${X(0)+6}" y="${pad.t+12}">at the money</text>`;
+  // Shade the region where contracts are quoted with no bid at all. There is
+  // no spread to pay there because there is no market to sell into.
+  const nb=Math.max(...names.map(n=>curves[n].no_bid_from_pct ?? -99));
+  if(nb>-90 && nb>xs[0]){
+    s+=`<rect x="${X(xs[0])}" y="${pad.t}" width="${Math.max(0,X(nb)-X(xs[0]))}" height="${h-pad.t-pad.b}"
+         fill="var(--neg)" opacity=".07"/>
+        <text class="lbl" x="${X(xs[0])+8}" y="${h-pad.b-8}" opacity=".8">no bid — untradeable</text>`;
+  }
   // Individual strikes are noisy - a single one-tick-wide quote on a cheap
   // contract reads as a huge percentage. Bin by moneyness and plot the median
   // so the shape of the cost curve is visible rather than the quote noise.
