@@ -242,12 +242,16 @@ td.m{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13.5px}
 @media(prefers-reduced-motion:reduce){.beat::after{animation:none}}
 
 /* ---------- hero video ---------- */
-.video{margin:40px 0 0}
+.video{margin:38px 0 0;max-width:660px}
 .frame{position:relative;padding-top:56.25%;border:1px solid var(--rule);border-radius:3px;
   overflow:hidden;background:var(--card)}
 .frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .frame .placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;
-  padding:24px;color:var(--muted);font-family:var(--mono);font-size:12.5px;line-height:1.9}
+  padding:24px;color:var(--muted);font-family:var(--mono);font-size:12px;line-height:1.85;
+  background:repeating-linear-gradient(135deg,transparent,transparent 9px,
+    var(--rule-soft) 9px,var(--rule-soft) 10px)}
+.frame .placeholder b{display:block;color:var(--ink-2);font-weight:500;font-size:13px;
+  margin-bottom:6px;letter-spacing:.02em}
 
 /* ---------- back to top ---------- */
 .totop{position:fixed;right:22px;bottom:22px;width:40px;height:40px;border-radius:50%;
@@ -1068,10 +1072,12 @@ function youtubeId(v){
   return m?m[1]:"";
 }
 function renderVideo(){
-  const id=youtubeId(VIDEO), f=$("#videoframe"), note=$("#videonote");
+  const f=$("#videoframe"), note=$("#videonote");
+  if(!f) return;
+  const id=youtubeId(VIDEO);
   if(!id){
-    f.innerHTML='<div class="placeholder">The three minute demo lands here.<br>'+
-      'Until then, everything it shows is on this page and running live.</div>';
+    f.innerHTML='<div class="placeholder"><b>Demo film</b>'+
+      'Everything it will show is already on this page,<br>measured and running live.</div>';
     note.textContent="";
     return;
   }
@@ -1085,6 +1091,7 @@ function renderVideo(){
 /* ---------------- theme ---------------- */
 function initTheme(){
   const btn=$("#themebtn");
+  if(!btn) return;
   const sysDark=()=>window.matchMedia("(prefers-color-scheme:dark)").matches;
   let saved=null;
   try{ saved=localStorage.getItem("hs-theme"); }catch(e){}
@@ -1107,6 +1114,7 @@ function initTheme(){
 /* ---------------- back to top ---------------- */
 function initTop(){
   const b=$("#totop");
+  if(!b) return;
   const onScroll=()=>b.classList.toggle("on", window.scrollY>700);
   window.addEventListener("scroll",onScroll,{passive:true}); onScroll();
   b.addEventListener("click",()=>window.scrollTo({top:0,
@@ -1121,17 +1129,25 @@ function spy(){
   document.querySelectorAll("section[id]").forEach(s=>io.observe(s));
 }
 
-initTheme(); initTop(); renderVideo();
-renderMethod(); renderRefs(); renderStack(); renderBoundary(); renderDiff();
+// Each piece is isolated: a fault in the page shell must not stop the data
+// from rendering, and a fault in one chart must not stop the rest.
+function safely(label, fn){ try{ fn(); }catch(e){ console.error(label, e); } }
+["initTheme",initTheme,"initTop",initTop,"renderVideo",renderVideo,
+ "renderMethod",renderMethod,"renderRefs",renderRefs,"renderStack",renderStack,
+ "renderBoundary",renderBoundary,"renderDiff",renderDiff]
+  .reduce((a,x,i,arr)=>(i%2?a:[...a,[x,arr[i+1]]]),[])
+  .forEach(([n,f])=>safely(n,f));
 fetch("data.json?t="+Date.now()).then(r=>r.json()).then(d=>{
   $("#acct").textContent=(d.account&&d.account.account_number)||"paper";
   $("#eq").textContent=(d.account&&d.account.equity)?money(d.account.equity):"";
   $("#gen").textContent=(d.generated_at||"").replace("T"," ").replace("+00:00"," UTC");
   $("#live").innerHTML='<span class="beat"></span>'+((d.counts&&d.counts.journal_records)||0).toLocaleString()+" journal records";
   $("#feed").textContent=d.feed_note||"";
-  renderGlance(d); renderLadder(d); tryInit(d); renderLedger(d); renderCurve(d);
-  renderWidening(d); renderBoard(d); renderEmpirical(d); renderVerify(d); renderLog(d);
-  wireCopy(); wireBoardToTool(); spy();
+  [["glance",renderGlance],["ladder",renderLadder],["tool",tryInit],["ledger",renderLedger],
+   ["curve",renderCurve],["widening",renderWidening],["board",renderBoard],
+   ["tails",renderEmpirical],["verify",renderVerify],["log",renderLog]]
+    .forEach(([n,f])=>safely(n,()=>f(d)));
+  safely("wire",()=>{wireCopy();wireBoardToTool();spy();});
 }).catch(e=>{
   $("#live").innerHTML='<span class="beat" style="background:var(--ask)"></span>data unavailable';
   $("#ledgergrid").innerHTML='<div class="empty">Could not load data.json: '+esc(e)+'</div>';
