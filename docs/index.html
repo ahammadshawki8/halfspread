@@ -642,7 +642,7 @@ function renderWidening(d){
   let s=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Spread widening versus the session open">`;
   s+=axes(w,pad,ticks,v=>v.toFixed(1)+"x");
   s+=`<line x1="${pad.l}" y1="${Y(1)}" x2="${w-pad.r}" y2="${Y(1)}" stroke="var(--muted)" stroke-dasharray="4 3"/>
-      <text class="lb" x="${pad.l+7}" y="${Y(1)-7}">unchanged since the open</text>`;
+      <text class="lb" x="${w-pad.r}" y="${Y(1)+15}" text-anchor="end">unchanged since the open</text>`;
   series.forEach((x,k)=>{
     s+=`<path d="${x.s.map((p,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(avg(p)).toFixed(1)}`).join("")}"
       fill="none" stroke="${COL[x.n]||"var(--muted)"}" stroke-width="2"/>`;
@@ -654,7 +654,8 @@ function renderWidening(d){
   const spy=series.find(x=>x.n==="SPY")||series[0];
   $("#widencap").textContent=`${spy.n}: near-the-money spreads are `+
     `${avg(spy.s[spy.s.length-1]).toFixed(2)} times their level at the session's first reading, across `+
-    `${spy.s.length} observations. Nothing about the position changed. Only the hour did.`;
+    `${spy.s.length} observations. Nothing about the position changed. Only the hour did. `+
+    `Individual readings spike where a single quote went wide; the trend is the point.`;
 }
 
 function renderEmpirical(d){
