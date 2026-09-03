@@ -19,7 +19,9 @@ import time
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from . import chain, cli, config, execute, journal, monitor, observe, run, settle
+import subprocess
+
+from . import chain, cli, config, execute, journal, monitor, observe, publish, run, settle
 
 ET = ZoneInfo("America/New_York")
 _stop = threading.Event()
@@ -90,6 +92,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--observe-interval", type=int, default=300)
     ap.add_argument("--monitor-interval", type=int, default=60)
     ap.add_argument("--pin-threshold", type=float, default=0.25)
+    ap.add_argument("--publish-interval", type=int, default=600,
+                    help="seconds between dashboard refreshes")
     ap.add_argument("--preclose-minutes", type=int, default=15,
                     help="capture the counterfactual this long before the close")
     args = ap.parse_args(argv)
@@ -133,7 +137,33 @@ def main(argv: list[str] | None = None) -> int:
     for t in threads:
         t.start()
 
+    def _refresh_site() -> None:
+        """Regenerate the dashboard payload and push it, so the published page
+        tracks the running session instead of a snapshot taken by hand."""
+        try:
+            payload = publish.build(args.profile)
+            publish.OUT.parent.mkdir(parents=True, exist_ok=True)
+            import json as _json
+            publish.OUT.write_text(_json.dumps(payload, indent=2, default=str), encoding="utf-8")
+        except Exception as exc:
+            _log("publish", f"payload failed: {type(exc).__name__}: {exc}")
+            return
+        for cmd in (
+            ["git", "add", "-A", "docs", "data/journal"],
+            ["git", "-c", "user.name=ahammadshawki8",
+             "-c", "user.email=ahammadshawki8@users.noreply.github.com",
+             "commit", "-q", "-m", "Session update: journal and dashboard"],
+            ["git", "pull", "--rebase", "--autostash", "-q", "origin", "main"],
+            ["git", "push", "-q", "origin", "main"],
+        ):
+            try:
+                subprocess.run(cmd, cwd=str(config.ROOT), capture_output=True,
+                               text=True, timeout=90)
+            except Exception:
+                break
+
     preclose_done = False
+    last_publish = 0.0
     while not _stop.is_set() and datetime.now(timezone.utc) < deadline:
         try:
             clock = cli.clock(profile=args.profile)
@@ -153,6 +183,11 @@ def main(argv: list[str] | None = None) -> int:
                 break
         except Exception as exc:
             _log("session", f"clock check failed: {exc}")
+
+        if time.time() - last_publish > args.publish_interval:
+            _refresh_site()
+            last_publish = time.time()
+
         _stop.wait(30)
 
     _stop.set()
@@ -170,6 +205,7 @@ def main(argv: list[str] | None = None) -> int:
     rep = settle.report(args.profile)
     _log("session", f"report {rep}")
     journal.write("session_end", profile=args.profile, report=rep)
+    _refresh_site()
     return 0
 
 
