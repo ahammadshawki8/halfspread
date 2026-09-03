@@ -22,3 +22,6 @@ Thumbs.db
 # scratch
 *.tmp
 *.log
+logs_*.txt
+.playwright-mcp/
+halfspread-dashboard.png

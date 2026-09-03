@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HALFSPREAD</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d10'/%3E%3Cpath d='M7 22V10M7 16h8M15 10v12' stroke='%235aa9ff' stroke-width='2.6' stroke-linecap='round'/%3E%3Cpath d='M21 11v10' stroke='%233ddc97' stroke-width='2.6' stroke-linecap='round'/%3E%3Cpath d='M26 13v6' stroke='%23ffb454' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
 <meta name="description" content="An autonomous options agent built on one finding: in short-dated options, the exit is where the money dies.">
 <style>
 :root{
@@ -192,12 +193,27 @@ function renderCurve(d){
   s+=axes(w,h,pad,xs,ys,v=>v.toFixed(1)+"%",v=>v.toFixed(0)+"%");
   s+=`<line class="gl" x1="${X(0)}" y1="${pad.t}" x2="${X(0)}" y2="${h-pad.b}" stroke-dasharray="3 3"/>
       <text class="lbl" x="${X(0)+6}" y="${pad.t+12}">at the money</text>`;
+  // Individual strikes are noisy - a single one-tick-wide quote on a cheap
+  // contract reads as a huge percentage. Bin by moneyness and plot the median
+  // so the shape of the cost curve is visible rather than the quote noise.
+  const BIN=0.25;
+  const binned=n=>{
+    const b=new Map();
+    for(const p of curves[n].points){
+      const k=Math.round(p.m/BIN)*BIN;
+      (b.get(k)||b.set(k,[]).get(k)).push(p.hs);
+    }
+    return [...b.entries()].map(([m,v])=>({m,hs:v.sort((x,y)=>x-y)[Math.floor(v.length/2)]}))
+                           .sort((a,b)=>a.m-b.m);
+  };
   names.forEach((n,i)=>{
-    const pts=curves[n].points.slice().sort((a,b)=>a.m-b.m);
+    const pts=binned(n);
+    if(pts.length<2) return;
     const dpath=pts.map((p,j)=>`${j?"L":"M"}${X(p.m).toFixed(1)},${Y(p.hs).toFixed(1)}`).join("");
-    s+=`<path d="${dpath}" fill="none" stroke="${colors[n]||'var(--ink-dim)'}" stroke-width="2" stroke-linejoin="round"/>`;
-    s+=`<circle cx="${w-pad.r-100}" cy="${pad.t+8+i*17}" r="4" fill="${colors[n]||'var(--ink-dim)'}"/>
-        <text class="lbl" x="${w-pad.r-90}" y="${pad.t+12+i*17}">${n}</text>`;
+    s+=`<path d="${dpath}" fill="none" stroke="${colors[n]||'var(--ink-dim)'}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    pts.forEach(p=>{s+=`<circle cx="${X(p.m).toFixed(1)}" cy="${Y(p.hs).toFixed(1)}" r="2.5" fill="${colors[n]||'var(--ink-dim)'}" opacity=".7"/>`;});
+    s+=`<circle cx="${pad.l+12}" cy="${pad.t+10+i*18}" r="4" fill="${colors[n]||'var(--ink-dim)'}"/>
+        <text class="lbl" x="${pad.l+22}" y="${pad.t+14+i*18}">${n}</text>`;
   });
   s+=`<text class="lbl" x="${pad.l}" y="${h-2}">moneyness (negative = further out of the money) →</text></svg>`;
   $("#curve").innerHTML=s;
