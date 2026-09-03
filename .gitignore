@@ -27,3 +27,4 @@ logs_*.txt
 # working screenshots, never project assets
 *.png
 !docs/**/*.png
+!submission/**/*.png

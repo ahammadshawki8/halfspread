@@ -1,0 +1,77 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B1119;--card:#111926;--ink:#E9EEF4;--ink2:#B9C6D4;--muted:#7D8FA3;
+  --rule:#1F2A38;--bid:#46B189;--ask:#E4707F;--measure:#E0A030;
+  --serif:"Newsreader",Georgia,serif;--mono:"IBM Plex Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1200px;height:630px;background:var(--bg);color:var(--ink);
+  font-family:var(--serif);display:flex;flex-direction:column;padding:34px 44px}
+.top{display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--ink)}
+.mark{font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:.26em}
+.top .when{margin-left:auto;font-family:var(--mono);font-size:14px;color:var(--muted)}
+h1{font-size:44px;line-height:1.05;font-weight:400;letter-spacing:-.025em;margin:0;max-width:15ch}
+.sub{font-size:16px;color:var(--ink2);margin-top:14px;max-width:34ch;line-height:1.5}
+table{width:100%;border-collapse:collapse;font-family:var(--mono)}
+td{padding:6.5px 0;font-size:15px;font-variant-numeric:tabular-nums}
+td.n{width:74px;color:var(--ink);font-weight:500}
+td.h{width:104px;color:var(--muted);font-size:12px}
+td.v{width:74px;text-align:right;padding-right:14px}
+td.bar div{height:9px;border-radius:2px}
+tr.soon td.v{color:var(--ask);font-weight:600}
+tr.later td.v{color:var(--bid)}
+.split{margin-top:16px;padding-top:14px;border-top:1px solid var(--rule);display:flex;gap:34px;align-items:flex-end}
+.stat .k{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.09em;text-transform:uppercase}
+.stat .v{font-family:var(--mono);font-size:32px;font-weight:600;letter-spacing:-.03em;margin-top:5px}
+.kicker{margin-left:auto;text-align:right;font-size:19px;line-height:1.3;max-width:16ch;color:var(--ink)}
+.cols{display:flex;gap:44px;align-items:center;margin-top:16px;flex:1}
+.left{width:400px;flex:0 0 400px}
+</style></head>
+<body>
+  <div class="top">
+    <svg width="42" height="27" viewBox="0 0 34 22">
+      <rect x="1" y="3" width="3.4" height="16" rx="1.2" fill="#46B189"/>
+      <rect x="29.6" y="3" width="3.4" height="16" rx="1.2" fill="#E4707F"/>
+      <rect x="7" y="10" width="20" height="2.4" rx="1.2" fill="#E0A030"/>
+      <rect x="7" y="6" width="1.6" height="10" rx=".8" fill="#E0A030" opacity=".55"/>
+      <rect x="25.4" y="6" width="1.6" height="10" rx=".8" fill="#E0A030" opacity=".55"/>
+    </svg>
+    <span class="mark">HALFSPREAD</span>
+    <span class="when">measured 3 Sept 2026, 19:34 UTC &nbsp;&middot;&nbsp; Alpaca paper</span>
+  </div>
+
+  <div class="cols">
+    <div class="left">
+      <h1>What it costs to get out of an options trade.</h1>
+      <p class="sub">Half the bid-ask, as a share of what the contract is worth. Thirteen names
+        quoted at the same minute. The only thing separating them is how long they have left.</p>
+    </div>
+    <table id="t"></table>
+  </div>
+
+  <div class="split">
+    <div class="stat"><div class="k">a day to expiry</div><div class="v" style="color:#46B189">2.95%</div></div>
+    <div class="stat"><div class="k">under two hours</div><div class="v" style="color:#E4707F">33.33%</div></div>
+    <div class="kicker">The exit is where the money dies.</div>
+  </div>
+
+<script>
+const rows=[
+ ["NVDA","a day out",0.52],["TSLA","a day out",1.16],["AMZN","a day out",1.24],
+ ["AAPL","a day out",1.27],["MSFT","a day out",2.95],["META","a day out",3.96],
+ ["AMD","a day out",4.36],["GOOGL","a day out",4.97],
+ ["SPXW","26 min left",10.20],["SPY","26 min left",14.29],["QQQ","26 min left",33.33],
+ ["XSP","26 min left",100.00],["IWM","26 min left",100.00]];
+const max=Math.max(...rows.map(r=>r[2]));
+document.getElementById("t").innerHTML=rows.map(([n,h,v])=>{
+  const soon=h.includes("min");
+  return `<tr class="${soon?'soon':'later'}">
+    <td class="n">${n}</td><td class="h">${h}</td>
+    <td class="v">${v.toFixed(2)}%</td>
+    <td class="bar"><div style="width:${(v/max*100).toFixed(1)}%;background:${soon?'#E4707F':'#46B189'};opacity:.62"></div></td></tr>`;
+}).join("");
+</script>
+</body></html>

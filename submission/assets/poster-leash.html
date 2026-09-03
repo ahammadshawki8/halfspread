@@ -1,0 +1,83 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B1119;--card:#111926;--ink:#E9EEF4;--ink2:#B9C6D4;--muted:#7D8FA3;
+  --rule:#1F2A38;--bid:#46B189;--ask:#E4707F;--measure:#E0A030;
+  --serif:"Newsreader",Georgia,serif;--mono:"IBM Plex Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1200px;height:630px;background:var(--bg);color:var(--ink);
+  font-family:var(--serif);display:flex;flex-direction:column;padding:34px 44px}
+.top{display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--ink)}
+.mark{font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:.26em}
+.top .when{margin-left:auto;font-family:var(--mono);font-size:14px;color:var(--muted)}
+h1{font-size:40px;line-height:1.06;font-weight:400;letter-spacing:-.025em;margin:18px 0 0;max-width:26ch}
+.sub{font-size:15.5px;color:var(--ink2);margin-top:12px;max-width:74ch;line-height:1.5}
+
+.flow{display:flex;align-items:center;gap:0;margin-top:22px}
+.node{border:1.5px solid var(--ink);border-radius:4px;padding:12px 14px;text-align:center;flex:1}
+.node.ai{border-color:var(--measure)}
+.node .t{font-family:var(--mono);font-size:14px;font-weight:500}
+.node .s{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:5px;line-height:1.45}
+.arrow{flex:0 0 66px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:11px;
+  line-height:1.5;padding:0 6px}
+.arrow .line{height:1.5px;background:var(--muted);margin:7px 0;position:relative}
+.arrow .line::after{content:"";position:absolute;right:-1px;top:-3.5px;border-left:8px solid var(--muted);
+  border-top:4px solid transparent;border-bottom:4px solid transparent}
+
+.cannot{margin-top:24px;border-left:2px solid var(--ask);padding:2px 0 2px 20px;flex:1}
+.cannot .h{font-family:var(--mono);font-size:11px;color:var(--ask);letter-spacing:.08em;
+  text-transform:uppercase}
+.cannot ul{list-style:none;margin-top:9px;display:flex;gap:34px}
+.cannot li{font-family:var(--mono);font-size:16px;color:var(--ink);padding:0}
+.ok{margin-top:14px;border-left:2px solid var(--bid);padding:2px 0 2px 20px}
+.ok .h{font-family:var(--mono);font-size:11px;color:var(--bid);letter-spacing:.08em;text-transform:uppercase}
+.ok p{font-family:var(--mono);font-size:15px;margin-top:7px;color:var(--ink)}
+
+.kicker{margin-top:16px;padding-top:14px;border-top:1px solid var(--rule);
+  font-size:20px;line-height:1.35;max-width:62ch}
+</style></head>
+<body>
+  <div class="top">
+    <svg width="42" height="27" viewBox="0 0 34 22">
+      <rect x="1" y="3" width="3.4" height="16" rx="1.2" fill="#46B189"/>
+      <rect x="29.6" y="3" width="3.4" height="16" rx="1.2" fill="#E4707F"/>
+      <rect x="7" y="10" width="20" height="2.4" rx="1.2" fill="#E0A030"/>
+      <rect x="7" y="6" width="1.6" height="10" rx=".8" fill="#E0A030" opacity=".55"/>
+      <rect x="25.4" y="6" width="1.6" height="10" rx=".8" fill="#E0A030" opacity=".55"/>
+    </svg>
+    <span class="mark">HALFSPREAD</span>
+    <span class="when">an AI on a short leash</span>
+  </div>
+
+  <h1>The model gets one job, and it cannot enlarge anything.</h1>
+  <p class="sub">Strike, width, size, price and exit are arithmetic. The language model reads
+    live headlines for event risk and may shrink a position. That is the whole of its authority,
+    and the clamp lives in code rather than in a prompt.</p>
+
+  <div class="flow">
+    <div class="node"><div class="t">Deterministic engine</div>
+      <div class="s">strike, width, size<br>price, exit</div></div>
+    <div class="arrow">proposed<div class="line"></div></div>
+    <div class="node ai"><div class="t">AI event review</div>
+      <div class="s">reads live<br>headlines</div></div>
+    <div class="arrow">clamped<div class="line"></div>in code</div>
+    <div class="node"><div class="t">Size</div>
+      <div class="s">scaled down,<br>or unchanged</div></div>
+  </div>
+
+  <div class="cannot">
+    <div class="h">the model cannot</div>
+    <ul><li>enlarge a position</li><li>choose a strike</li><li>overrule a risk gate</li></ul>
+  </div>
+
+  <div class="ok">
+    <div class="h">and if it is unreachable</div>
+    <p>the deterministic decision stands</p>
+  </div>
+
+  <p class="kicker">We do not trust a language model with money. We give it the one job
+    humans are worst at automating.</p>
+</body></html>
