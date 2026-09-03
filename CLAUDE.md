@@ -207,6 +207,25 @@ Global flags: `--jq`, `--csv`, `--quiet`, `--schema`, `--debug`. JSON on stdout 
 
 ---
 
+## 5.2 Deployment (zero cost, no card)
+
+```
+GitHub Actions  ->  runs agent/session.py (workflow_dispatch or cron 13:35 UTC)
+      | commits
+   the repo     ->  data/journal/*.jsonl = tamper-evident audit trail (git history)
+      | serves
+ GitHub Pages   ->  docs/index.html reads docs/data.json
+```
+
+- **Application URL: https://ahammadshawki8.github.io/halfspread/** (Pages source: `main` / `/docs`)
+- Secrets in GitHub: `ALPACA_DEV_API_KEY`, `ALPACA_DEV_SECRET_KEY`, `ALPACA_COMP_API_KEY`, `ALPACA_COMP_SECRET_KEY`, `GROQ_API_KEY`
+- **Featherless: dropped** — required a card, violates R3. Nothing depends on it.
+- **LLM: Groq**, free tier, no card. `openai/gpt-oss-120b` primary, `qwen/qwen3.8-27b` fallback.
+  Groq is behind Cloudflare and rejects urllib's default User-Agent with error 1010 — a
+  `User-Agent` header is mandatory. Its JSON mode also requires the word "json" in the messages.
+- Actions cron can fire late or be skipped, so the demonstrated session runs locally and CI is
+  the autonomous-runtime proof.
+
 ## 6. Architecture
 
 ```
@@ -336,21 +355,27 @@ halfspread/
 - [x] COMP arming guard verified: submitting to COMP without the token raises
 - [ ] Live fill during market hours (blocked until 13:30 UTC)
 
-### Tier 3.5 — Orchestration (IN PROGRESS)
-- [ ] `run.py` — preflight → scan → size → execute → journal, one cycle and a loop
-- [ ] `monitor.py` — pin-risk watch, emergency close booked as a cost event
-- [ ] `settle.py` — expiry accounting, zero-exit-cost proof, counterfactual
+### Tier 3.5 — Orchestration ✅ COMPLETE
+- [x] `run.py` — preflight → scan → size → veto → execute → journal
+- [x] `llm.py` — bounded event-risk veto on Groq (clamped to [0,1] in code)
+- [x] `monitor.py` — pin-risk watch, emergency close booked as a cost event
+- [x] `settle.py` — expiry accounting, zero-exit-cost proof, counterfactual
+- [x] `session.py` — one entrypoint running all three concurrently, local and CI
 
-### Tier 4 — Live run on COMP
-- [ ] COMP account created ($100,000 exactly), keys loaded, **never touched by hand**
-- [ ] `monitor.py` — pin-risk watch + emergency close
-- [ ] `settle.py` — expiry accounting, zero-exit-cost proof, counterfactual
-- [ ] **Thursday session: first live COMP entry**
+### Tier 4 — Live run on COMP (WAITING FOR THE OPEN)
+- [x] COMP account created ($100,000 exactly), keys loaded, **untouched**
+- [x] GitHub Secrets set (both profiles + Groq)
+- [x] `.github/workflows/session.yml` — CI runtime, commits its own journal
+- [ ] **Verify a real fill on DEV once the market opens (13:30 UTC)**
+- [ ] Re-measure the cost curve during market hours before any COMP order
+- [ ] **First live COMP entry**
 - [ ] Confirm settlement and realized P&L
 
-### Tier 5 — Dashboard & deploy
-- [ ] Static dashboard reading journal JSONL (cost ledger + counterfactual as the hero)
-- [ ] Deploy free (GitHub Pages / Vercel free tier) → Application URL
+### Tier 5 — Dashboard & deploy ✅ CORE COMPLETE
+- [x] `publish.py` — derives the payload from the journal; the page computes nothing
+- [x] `docs/index.html` — ledger, cost curve, widening chart, decision log
+- [x] **GitHub Pages live: https://ahammadshawki8.github.io/halfspread/**
+- [ ] Re-verify rendering once real trades populate it
 
 ### Tier 6 — MCP layer
 - [ ] Alpaca MCP server configured (`uvx alpaca-mcp-server`) as the judge's read-only window
@@ -364,6 +389,7 @@ halfspread/
 
 Newest first. One line per session. Keep it terse.
 
+- **2026-09-03 (session 1, cont. 2)** — Tiers 3.5 and 5 done. Added the bounded Groq veto (it pulled US-Iran tensions and an oil surge out of live headlines, and independently flagged Friday's payrolls print), session runner, CI workflow, publisher and dashboard. Pages live. **Waiting on the 13:30 UTC open to verify a real fill on DEV, then go live on COMP.**
 - **2026-09-03 (session 1, cont.)** — Tiers 1-3 core built and verified. Full pipeline runs end to end on DEV: scan prices 115 candidates and admits 16; best is SPY 759/757 at 0.19 credit, $181 max loss, P(win) 0.897, net EV $4.68; risk sizes it at 5 contracts for $905; mleg payload accepted by Alpaca then cancelled; COMP arming guard confirmed to refuse. Remaining before the 13:30 UTC open: `run.py`, `monitor.py`, `settle.py`.
 - **2026-09-03 (session 1)** — Researched hackathon + ~90 competitors. Killed two candidates (dispersion; Vilkov's rules) on evidence. Locked HALFSPREAD. Installed Alpaca CLI + uv, created repo, wrote CLAUDE.md. DEV + COMP keys loaded and both profiles verified; COMP pristine at $100k. **Tier 0 complete** — index option data available, greeks NOT available (we compute our own), and the measured cost curve (§5.1 Finding 3) reshaped strike selection from delta-target to net-EV maximisation. Next: Tier 1.
 
