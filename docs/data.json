@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-03T17:36:40+00:00",
+  "generated_at": "2026-09-03T18:30:39+00:00",
   "verification": {
     "passed": 10,
     "total": 10,
@@ -8,7 +8,7 @@
       {
         "ok": true,
         "claim": "The journal exists and is readable.",
-        "evidence": "3923 records across 1 file(s)."
+        "evidence": "3937 records across 1 file(s)."
       },
       {
         "ok": true,
@@ -57,7 +57,7 @@
       }
     ],
     "facts": {
-      "journal_records": 3923,
+      "journal_records": 3937,
       "orders": 3,
       "requoted": 3,
       "max_abs_drift": 7.0,
@@ -152,11 +152,11 @@
   "account_id": "0509a308-f1ef-44e2-8e8b-8a6d0893f84b",
   "account": {
     "account_number": "PA31RB6YR1V6",
-    "equity": 100026.65,
+    "equity": 100019.65,
     "cash": 100066.65,
     "options_level": 3,
     "starting_equity": 100000.0,
-    "pnl": 26.65
+    "pnl": 19.65
   },
   "ledger": {
     "positions_resolved": 0,
@@ -170,7 +170,7 @@
     "exit_cost_avoided_by_settling": 0,
     "realized_pnl_if_round_tripped": 0,
     "advantage_from_not_exiting": 0,
-    "account_equity": 100026.65,
+    "account_equity": 100020.65,
     "exit_cost_at_stake": 9.0,
     "open_positions_priced": 3,
     "credit_received": 69.0,
@@ -188,7 +188,7 @@
     "emergency_closes": 0,
     "vetoes": 4,
     "refusals": 22,
-    "journal_records": 3920
+    "journal_records": 3927
   },
   "spread_story": {
     "symbol": "SPY 765 put",
