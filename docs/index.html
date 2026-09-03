@@ -252,10 +252,14 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
 
   <section id="try">
     <h2>Price a trade yourself</h2>
-    <p class="lede">This is the desk's own engine, not a description of it. Pick a strike and a
-      width against the live chain and it runs the same arithmetic and the same gates the agent
-      applied to its own orders, in your browser. Most combinations are rejected. That is the
-      point of it.</p>
+    <p class="lede">This is the desk's own engine, not a description of it. Pick any name it
+      watches, then a strike and a width against the live chain, and it runs the same arithmetic
+      and the same gates the agent applied to its own orders, in your browser. It will tell you
+      what a trade really costs to enter, what leaving it would cost right now, and which gate
+      rejects it. Most combinations are rejected. That is the point of it.</p>
+    <p class="hint" style="margin-bottom:18px">The first three names are what this desk trades.
+      The rest are watched and published so the same measurement can be run on tickers people
+      actually hold. Nothing outside the traded three can be ordered by the agent.</p>
     <div class="controls" id="controls"></div>
     <div class="result" id="tryresult"></div>
     <p class="hint" id="trynote"></p>
@@ -626,7 +630,18 @@ function renderLog(d){
 
 /* ---------------- the desk you can operate ---------------- */
 let TRY=null;
-const WIDTHS={SPY:[1,2,3,5],XSP:[1,2,3,5],SPXW:[5,10,15,25]};
+/* Strike spacing differs by name and by price, so derive the offered widths
+   from the chain itself rather than hardcoding a table that goes wrong the
+   moment a new ticker is watched. */
+function widthsFor(chain){
+  const ks=(chain.puts||[]).map(p=>p.k).sort((a,b)=>a-b);
+  if(ks.length<3) return [1,2,5];
+  const gaps=[];
+  for(let i=1;i<ks.length;i++){const g=+(ks[i]-ks[i-1]).toFixed(4); if(g>0) gaps.push(g);}
+  gaps.sort((a,b)=>a-b);
+  const step=gaps[Math.floor(gaps.length/2)]||1;
+  return [1,2,3,5].map(m=>+(step*m).toFixed(4));
+}
 
 function tryInit(d){
   const chains=d.chains||{}, unders=Object.keys(chains);
@@ -635,6 +650,13 @@ function tryInit(d){
     return;
   }
   TRY={d,chains};
+  const TRADED=["SPY","XSP","SPXW"];
+  unders.sort((a,b)=>{
+    const ta=TRADED.indexOf(a), tb=TRADED.indexOf(b);
+    if(ta>=0&&tb>=0) return ta-tb;
+    if(ta>=0) return -1; if(tb>=0) return 1;
+    return a.localeCompare(b);
+  });
   const u=unders.includes("SPY")?"SPY":unders[0];
   $("#controls").innerHTML=
     sel("u","underlying",unders,u)+
@@ -663,14 +685,14 @@ function fillStrike(){
   const pick=otm[Math.min(3,otm.length-1)];
   $("#wstrike").innerHTML=`<label for="k">short strike</label>
     <select id="k">${otm.map(k=>`<option${k===pick?" selected":""}>${k}</option>`).join("")}</select>`;
-  const ws=WIDTHS[u]||[1,2,3,5];
+  const ws=widthsFor(c);
   $("#wwidth").innerHTML=`<label for="w">width</label>
     <select id="w">${ws.map(w=>`<option${w===ws[1]?" selected":""}>${w}</option>`).join("")}</select>`;
   $("#k").onchange=run; $("#w").onchange=run;
 }
 function findBest(){
   const u=$("#u").value,e=$("#e").value,c=TRY.chains[u][e],d=TRY.d;
-  const all=HS.rankAll(c,d.gates,d.empirical_samples,e,WIDTHS[u]||[1,2,3,5],Date.parse(c.ts));
+  const all=HS.rankAll(c,d.gates,d.empirical_samples,e,widthsFor(c),Date.parse(c.ts));
   const win=all.find(r=>r.admissible)||all[0];
   if(!win){run();return;}
   $("#k").value=String(win.shortK); $("#w").value=String(win.width);

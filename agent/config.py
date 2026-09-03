@@ -28,10 +28,20 @@ COMP_ACCOUNT_ID = "0509a308-f1ef-44e2-8e8b-8a6d0893f84b"
 OPTION_FEED = "indicative"
 STOCK_FEED = "iex"
 
-# Underlyings the agent prices every cycle. SPY is primary on measured cost
-# (CLAUDE.md 5.1 Finding 3); the others stay in so measurement picks the
-# winner rather than assumption.
+# What the agent may TRADE. Deliberately narrow: SPY is primary on measured
+# cost (CLAUDE.md 5.1 Finding 3), and the two index roots stay in so
+# measurement picks the winner rather than assumption.
 UNIVERSE = ["SPY", "XSP", "SPXW"]
+
+# What the agent OBSERVES. Wider, and read-only: these names are quoted and
+# published so the cost curve can be checked on tickers people actually hold,
+# not just the three this desk happens to trade. Nothing here is tradeable by
+# the agent unless it also appears in UNIVERSE, so widening the watchlist adds
+# no risk to the account. Single-name options also carry visibly worse spreads
+# than the index, which is the comparison worth showing.
+WATCHLIST = UNIVERSE + [
+    "QQQ", "IWM", "AAPL", "NVDA", "TSLA", "MSFT", "AMD", "META", "AMZN", "GOOGL",
+]
 
 # Approximate spot scale relative to SPY, used only for strike-window sizing.
 SPOT_SCALE = {"SPY": 1.0, "XSP": 1.0, "SPXW": 10.0}

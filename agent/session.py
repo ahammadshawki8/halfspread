@@ -37,12 +37,18 @@ def _log(tag: str, msg: str) -> None:
     print(f"{stamp} [{tag:<8}] {msg}", flush=True)
 
 
-def _observer_thread(expiry: str, profile: str, interval: int) -> None:
+def _observer_thread(expiry: str, profile: str, interval: int,
+                     fallbacks: list[str] | None = None) -> None:
+    # The observer walks the whole watchlist; only UNIVERSE is tradeable.
     while not _stop.is_set():
-        for u in sorted(config.UNIVERSE, key=lambda x: x != "SPY"):
+        for u in sorted(config.WATCHLIST, key=lambda x: x != "SPY"):
             if _stop.is_set():
                 return
-            rec = observe.snapshot(u, expiry, profile)
+            try:
+                rec = observe.snapshot(u, expiry, profile, fallbacks)
+            except Exception as exc:
+                _log("observe", f"{u} skipped: {type(exc).__name__}")
+                continue
             if rec:
                 near = observe._band(rec["rows"], -1.0, 0.0)
                 far = observe._band(rec["rows"], -3.0, -2.0)
@@ -129,7 +135,8 @@ def main(argv: list[str] | None = None) -> int:
 
     threads = [
         threading.Thread(target=_observer_thread,
-                         args=(expiry, args.profile, args.observe_interval), daemon=True),
+                         args=(expiry, args.profile, args.observe_interval,
+                               chain.next_expiries(4, profile=args.profile)), daemon=True),
         # The observer watches one expiry; the agent must stay free to pick its
         # own, otherwise pinning the session's expiry silently overrides the
         # ranking and the agent only ever sees today's contracts.

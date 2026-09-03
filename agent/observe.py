@@ -30,13 +30,30 @@ def _handle_stop(signum, frame):  # noqa: ARG001
     print("\nstopping after current cycle...", file=sys.stderr)
 
 
-def snapshot(underlying: str, expiry: str, profile: str) -> dict | None:
-    """One observation of the whole cost curve for one underlying."""
-    try:
-        spot, source, puts, _ = chain.reference_level(underlying, expiry, profile=profile)
-    except Exception as exc:
-        journal.write("observe_error", underlying=underlying, expiry=expiry, error=str(exc))
+def snapshot(underlying: str, expiry: str, profile: str,
+             fallback_expiries: list[str] | None = None) -> dict | None:
+    """One observation of the whole cost curve for one underlying.
+
+    Only the index products and the biggest ETFs list daily expiries. A single
+    name asked for a Thursday expiry simply has no chain, so the observer walks
+    forward to the nearest date that does, and records which one it used.
+    """
+    candidates = [expiry] + [e for e in (fallback_expiries or []) if e != expiry]
+    spot = source = puts = None
+    used = None
+    for candidate in candidates:
+        try:
+            spot, source, puts, _ = chain.reference_level(underlying, candidate, profile=profile)
+        except Exception:
+            continue
+        if puts:
+            used = candidate
+            break
+    if used is None:
+        journal.write("observe_error", underlying=underlying, expiry=expiry,
+                      error="no chain on any candidate expiry", tried=candidates)
         return None
+    expiry = used
 
     chain.remember_center(underlying, spot)
     rows = []
@@ -58,7 +75,7 @@ def snapshot(underlying: str, expiry: str, profile: str) -> dict | None:
 
     rec = journal.write(
         "observation",
-        underlying=underlying, expiry=expiry,
+        underlying=underlying, expiry=expiry, tradeable=underlying in config.UNIVERSE,
         reference_level=round(spot, 4), reference_source=source,
         strikes=len(rows), rows=rows,
     )
@@ -148,7 +165,7 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         expiry = days[0]
 
-    underlyings = sorted(args.underlying or config.UNIVERSE, key=lambda u: u != "SPY")
+    underlyings = sorted(args.underlying or config.WATCHLIST, key=lambda u: u != "SPY")
 
     signal.signal(signal.SIGINT, _handle_stop)
     try:

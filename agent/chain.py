@@ -10,6 +10,10 @@ from zoneinfo import ZoneInfo
 from . import cli, config, pricing
 
 ET = ZoneInfo("America/New_York")
+
+# Cash-settled index roots. Alpaca publishes no spot for these, so their
+# reference level comes from put-call parity on the chain itself.
+INDEX_ROOTS = {"XSP", "SPX", "SPXW", "VIX", "VIXW", "DJX", "NDX"}
 OCC_RE = re.compile(r"^(?P<root>[A-Z]+)(?P<ymd>\d{6})(?P<kind>[CP])(?P<strike>\d{8})$")
 
 
@@ -154,10 +158,13 @@ def reference_level(
     because it works uniformly across equity ETFs and cash indices; falls
     back to the stock quote for SPY-like symbols.
     """
+    # Every equity and ETF has a stock quote; the cash indices do not, which is
+    # what put-call parity is for below. Anchoring a single name to SPY's price
+    # would look for AAPL strikes near 770 and find an empty chain.
     center = None
-    if underlying == "SPY":
+    if underlying not in INDEX_ROOTS:
         try:
-            q = (cli.latest_stock_quote("SPY", profile=profile) or {}).get("quote") or {}
+            q = (cli.latest_stock_quote(underlying, profile=profile) or {}).get("quote") or {}
             bid, ask = float(q.get("bp") or 0), float(q.get("ap") or 0)
             center = (bid + ask) / 2 if bid > 0 and ask > 0 else (bid or ask) or None
         except Exception:
@@ -183,13 +190,20 @@ _CENTER_CACHE: dict[str, float] = {}
 
 def _last_known_center(underlying: str) -> float | None:
     """Rough starting window so the first chain pull is not unbounded.
-    Refined immediately by parity once quotes are in hand."""
+    Refined immediately by parity once quotes are in hand.
+
+    Only scale off SPY for the index roots whose ratio to it is known. Doing
+    that for an arbitrary ticker points the strike window at the wrong price
+    entirely and the chain comes back empty.
+    """
     if underlying in _CENTER_CACHE:
         return _CENTER_CACHE[underlying]
+    if underlying not in config.SPOT_SCALE:
+        return None
     spy = _CENTER_CACHE.get("SPY")
     if spy is None:
         return None
-    return spy * config.SPOT_SCALE.get(underlying, 1.0)
+    return spy * config.SPOT_SCALE[underlying]
 
 
 def remember_center(underlying: str, level: float) -> None:
