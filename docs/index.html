@@ -956,7 +956,7 @@ function renderBoundary(){
      line straight through its own annotations. Monospace at these sizes is
      about 0.60 em per character, which is enough to size a box from its
      longest line. */
-  const W=1000,H=430,CH=.61;
+  const W=1000,CH=.61;
   const w12=t=>t.length*12.5*CH, w10=t=>t.length*10.5*CH;
   const boxes=[
     {k:"det",  t:"Deterministic engine", s:["strike, width, size","price, exit"]},
@@ -975,6 +975,10 @@ function renderBoundary(){
   boxes.forEach((b,i)=>{ b.x=x; b.y=midY-b.h/2; x+=b.w+(gaps[i]||0); });
   const by=k=>boxes.find(b=>b.k===k);
 
+  // Height comes from where the content actually ends, so the figure has no
+  // dead space under it.
+  const aiH=by("ai").h;
+  const H=Math.round(midY+aiH/2+46+14+3*19+26+22);
   let g=`<svg viewBox="0 0 ${W} ${H}" role="img"
     aria-label="The language model can only reduce position size; every other decision is deterministic">
     <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6"
