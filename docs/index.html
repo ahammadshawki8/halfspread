@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HALFSPREAD</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23101720'/%3E%3Crect x='6' y='9' width='4' height='14' fill='%233FA983'/%3E%3Crect x='22' y='9' width='4' height='14' fill='%23E0697C'/%3E%3Crect x='12' y='15' width='8' height='2' fill='%23E0A030'/%3E%3C/svg%3E">
+<meta name="description" content="An autonomous options agent that measures what execution costs before every order, and never pays that cost twice.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F5F6F8; --card:#FFFFFF; --ink:#101720; --ink-2:#3C4A59; --muted:#65758A;
+  --rule:#D7DCE3; --rule-soft:#E6EAEF;
+  --bid:#1B6B50; --ask:#A63446; --measure:#8F5B05;
+  --measure-wash:rgba(143,91,5,.13);
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#0B1119; --card:#111926; --ink:#E9EEF4; --ink-2:#B9C6D4; --muted:#7D8FA3;
+    --rule:#1F2A38; --rule-soft:#18212D;
+    --bid:#46B189; --ask:#E4707F; --measure:#E0A030;
+    --measure-wash:rgba(224,160,48,.14);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--serif);font-size:17px;line-height:1.6;
+  font-optical-sizing:auto;-webkit-font-smoothing:antialiased}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+a{color:inherit;text-decoration-color:var(--rule);text-underline-offset:3px}
+a:hover{text-decoration-color:var(--measure)}
+:focus-visible{outline:2px solid var(--measure);outline-offset:3px;border-radius:2px}
+
+.shell{max-width:1240px;margin:0 auto;padding:0 28px 96px;
+  display:grid;grid-template-columns:186px minmax(0,1fr);gap:0 52px}
+@media(max-width:960px){.shell{grid-template-columns:1fr;padding:0 20px 72px}}
+
+nav{position:sticky;top:0;align-self:start;padding:40px 0;font-family:var(--mono);
+  font-size:11.5px;line-height:2.15;max-height:100vh;overflow:auto}
+@media(max-width:960px){nav{display:none}}
+nav b{display:block;font-weight:600;letter-spacing:.04em;margin-bottom:10px;font-size:12px}
+nav a{display:block;color:var(--muted);text-decoration:none;border-left:2px solid transparent;
+  padding-left:11px;margin-left:-13px}
+nav a:hover{color:var(--ink)}
+nav a.on{color:var(--ink);border-left-color:var(--measure)}
+
+main{min-width:0;padding-top:40px}
+.mast{border-bottom:1px solid var(--ink);padding-bottom:14px;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.wordmark{font-family:var(--mono);font-weight:600;font-size:15px;letter-spacing:.24em}
+.status{font-family:var(--mono);font-size:11.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap}
+.beat{width:6px;height:6px;border-radius:50%;background:var(--bid);display:inline-block;
+  margin-right:6px;vertical-align:1px}
+
+h1{font-size:clamp(34px,5.6vw,62px);line-height:1.06;font-weight:400;letter-spacing:-.022em;
+  margin:44px 0 0;max-width:17ch}
+.standfirst{font-size:clamp(17px,1.9vw,20px);color:var(--ink-2);max-width:60ch;
+  margin:22px 0 0;line-height:1.62}
+
+.ladder{margin:52px 0 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  padding:30px 0 26px}
+.rung{display:grid;grid-template-columns:118px minmax(0,1fr);gap:22px;align-items:center;margin-top:28px}
+@media(max-width:640px){.rung{grid-template-columns:1fr;gap:6px}}
+.when{font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.5}
+.when em{display:block;font-style:normal;color:var(--ink);font-size:13px;font-weight:500}
+.bar{position:relative;height:66px}
+.track{position:absolute;left:0;right:0;top:32px;height:1px;background:var(--rule)}
+.quote{position:absolute;top:17px;width:3px;height:32px;border-radius:1px}
+.quote.b{background:var(--bid)} .quote.a{background:var(--ask)}
+.qlab{position:absolute;font-family:var(--mono);font-size:12px;white-space:nowrap;top:-1px}
+.qlab.b{color:var(--bid)} .qlab.a{color:var(--ask)}
+.gap{position:absolute;top:17px;height:32px;background:var(--measure-wash);
+  border-left:1px dashed var(--measure);border-right:1px dashed var(--measure);
+  transition:width .95s cubic-bezier(.4,0,.2,1)}
+.gaplab{position:absolute;top:55px;font-family:var(--mono);font-size:12.5px;color:var(--measure);
+  font-weight:500;white-space:nowrap;transform:translateX(-50%)}
+@media(prefers-reduced-motion:reduce){.gap{transition:none}}
+.verdict{margin-top:32px;padding-top:20px;border-top:1px solid var(--rule-soft);
+  font-size:18px;max-width:68ch;line-height:1.58}
+.verdict .big{font-family:var(--mono);font-size:23px;font-weight:600;color:var(--measure)}
+
+section{padding-top:64px;scroll-margin-top:24px}
+h2{font-size:clamp(22px,2.7vw,30px);font-weight:400;letter-spacing:-.015em;margin:0 0 10px;line-height:1.22}
+.lede{color:var(--ink-2);max-width:68ch;margin:0 0 26px;font-size:16.5px}
+.hint{font-size:14px;color:var(--muted);max-width:72ch;margin:4px 0 0;line-height:1.55}
+
+figure{margin:0;border:1px solid var(--rule);border-radius:3px;background:var(--card);padding:20px}
+figcaption{font-size:14.5px;color:var(--ink-2);margin-top:16px;padding-top:14px;
+  border-top:1px solid var(--rule-soft);line-height:1.55;max-width:82ch}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.gl{stroke:var(--rule-soft);stroke-width:1}
+.ax{fill:var(--muted);font-family:var(--mono);font-size:10.5px}
+.lb{fill:var(--ink-2);font-family:var(--mono);font-size:11px}
+
+.ledger{display:grid;grid-template-columns:repeat(auto-fit,minmax(198px,1fr));
+  border-top:1px solid var(--rule);border-left:1px solid var(--rule)}
+.cell{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  padding:18px 18px 20px;background:var(--card)}
+.cell .k{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.45}
+.cell .v{font-size:27px;font-weight:600;letter-spacing:-.025em;margin:10px 0 0}
+.cell .n{font-size:14px;color:var(--ink-2);margin-top:8px;line-height:1.45}
+.up{color:var(--bid)} .down{color:var(--ask)} .meas{color:var(--measure)}
+.cell.lead{grid-column:span 2}
+@media(max-width:640px){.cell.lead{grid-column:span 1}}
+
+.step{display:grid;grid-template-columns:152px minmax(0,1fr);gap:24px;
+  padding:15px 0 15px 22px;border-bottom:1px solid var(--rule-soft);border-left:2px solid var(--rule)}
+.step:last-child{border-bottom:none}
+.step:hover{border-left-color:var(--measure)}
+@media(max-width:640px){.step{grid-template-columns:1fr;gap:6px}}
+.step .t{font-family:var(--mono);font-size:12.5px;font-weight:500;line-height:1.5}
+.step .t span{display:block;color:var(--muted);font-weight:400;margin-top:3px;font-size:11.5px}
+.step .d{color:var(--ink-2);font-size:15.5px;line-height:1.58}
+.step .d b{color:var(--ink);font-weight:500}
+
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{text-align:left;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--muted);
+  padding:0 14px 10px 0;border-bottom:1px solid var(--rule)}
+td{padding:11px 14px 11px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td.m{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13.5px}
+.scroll{overflow-x:auto;border:1px solid var(--rule);border-radius:3px;background:var(--card);padding:18px}
+.tag{font-family:var(--mono);font-size:10.5px;padding:2px 7px;border:1px solid var(--rule);
+  border-radius:2px;color:var(--muted);white-space:nowrap}
+.tag.pass,.tag.settle{color:var(--bid);border-color:var(--bid)}
+.tag.fail,.tag.emergency{color:var(--ask);border-color:var(--ask)}
+.tag.trade{color:var(--ink);border-color:var(--ink)}
+.tag.veto,.tag.correction{color:var(--measure);border-color:var(--measure)}
+
+.refs{margin:0;padding:0;list-style:none;counter-reset:r}
+.refs li{counter-increment:r;display:grid;grid-template-columns:32px minmax(0,1fr);gap:14px;
+  padding:17px 0;border-bottom:1px solid var(--rule-soft)}
+.refs li:last-child{border-bottom:none}
+.refs li::before{content:"[" counter(r) "]";font-family:var(--mono);font-size:12px;color:var(--muted)}
+.refs cite{font-style:normal;display:block;font-size:16.5px;line-height:1.42}
+.refs .use{color:var(--ink-2);font-size:14.5px;margin-top:7px;line-height:1.55;max-width:74ch}
+.refs .src{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:6px}
+
+.stack{display:grid;grid-template-columns:repeat(auto-fit,minmax(234px,1fr));gap:1px;
+  background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.mod{background:var(--card);padding:16px 18px}
+.mod h3{font-family:var(--mono);font-size:13px;font-weight:600;margin:0 0 7px}
+.mod p{margin:0;font-size:14.5px;color:var(--ink-2);line-height:1.5}
+
+.note{border-left:2px solid var(--measure);background:var(--measure-wash);
+  padding:15px 18px;font-size:14.5px;color:var(--ink-2);margin-top:26px;line-height:1.55;
+  border-radius:0 3px 3px 0}
+footer{margin-top:74px;padding-top:22px;border-top:1px solid var(--ink);
+  font-size:13.5px;color:var(--muted);line-height:1.65}
+.empty{color:var(--muted);font-family:var(--mono);font-size:13px;padding:26px 0}
+code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding:1px 5px;border-radius:2px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav aria-label="Sections">
+  <b>HALFSPREAD</b>
+  <a href="#finding">The finding</a>
+  <a href="#ledger">Ledger</a>
+  <a href="#method">Method</a>
+  <a href="#curve">Cost curve</a>
+  <a href="#widening">Widening</a>
+  <a href="#tails">Tails</a>
+  <a href="#verify">Verification</a>
+  <a href="#research">Research</a>
+  <a href="#stack">Stack</a>
+  <a href="#log">Decisions</a>
+</nav>
+
+<main>
+  <div class="mast">
+    <div class="wordmark">HALFSPREAD</div>
+    <div class="status">
+      <span id="live"><span class="beat"></span>loading</span>
+      <span>Alpaca paper <span class="num" id="acct"></span></span>
+      <span>equity <span class="num" id="eq"></span></span>
+      <span id="gen"></span>
+    </div>
+  </div>
+
+  <section id="finding" style="padding-top:0">
+    <h1>The exit is where the money dies.</h1>
+    <p class="standfirst">Every premium-selling agent opens a position and later closes it.
+      That second trade is where the money goes, and almost nobody prices it. This agent
+      measures what execution costs before every order, then declines to pay it twice.</p>
+
+    <div class="ladder">
+      <h2 style="font-size:19px" id="ladtitle">One contract, quoted twice</h2>
+      <p class="hint" id="ladsub">Waiting for quotes.</p>
+      <div id="ladder"></div>
+      <div class="verdict" id="ladverdict"></div>
+    </div>
+  </section>
+
+  <section id="ledger">
+    <h2>The ledger</h2>
+    <p class="lede">Every figure is derived from the append-only journal committed in this
+      repository. The page computes nothing of its own, so it cannot drift from the record.</p>
+    <div class="ledger" id="ledgergrid"></div>
+  </section>
+
+  <section id="method">
+    <h2>How one decision is made</h2>
+    <p class="lede">The same ten steps run every cycle. Deterministic arithmetic decides
+      strike, size, price and exit. A language model may shrink a position and may do
+      nothing else.</p>
+    <div id="methodlist"></div>
+  </section>
+
+  <section id="curve">
+    <h2>Relative cost rises as strikes move out of the money</h2>
+    <p class="lede">Half the bid-ask, as a share of the option's mid price. The strike a
+      delta screen reaches for is the expensive one. Log scale, because the cost spans
+      nearly two decades.</p>
+    <figure><div id="curve"></div><figcaption id="curvecap"></figcaption></figure>
+  </section>
+
+  <section id="widening">
+    <h2>The claim is about time</h2>
+    <p class="lede">Entry and exit spreads are identical at any single instant, so the cost
+      of leaving is a statement about when you leave. These are the same strikes re-quoted
+      through the session.</p>
+    <figure><div id="widen"></div><figcaption id="widencap"></figcaption></figure>
+  </section>
+
+  <section id="tails">
+    <h2>Breach probability, counted rather than assumed</h2>
+    <p class="lede">Black-Scholes assumes lognormal returns. Measured sessions are not: the
+      downside tail runs well past what the deviation implies, and the move still left in a
+      session collapses through the day. Sizing takes the worse of the two.</p>
+    <figure><div id="emp"></div><figcaption id="empcap"></figcaption></figure>
+  </section>
+
+  <section id="verify">
+    <h2>Check it without asking us</h2>
+    <p class="lede">Every claim on this page is re-derived from the committed journal by
+      <code>python -m agent.verify</code>. No API key, no account, no network. It runs in
+      continuous integration on each push and fails the build if a number stops reproducing.</p>
+    <div class="scroll" id="verifybox"></div>
+  </section>
+
+  <section id="research">
+    <h2>What this is built on</h2>
+    <p class="lede">Four results shape the design. Two of them argue against trading at all,
+      which is why this desk is sized to survive rather than to produce a headline.</p>
+    <ol class="refs" id="refs"></ol>
+  </section>
+
+  <section id="stack">
+    <h2>The stack</h2>
+    <p class="lede">Standard library Python. The Alpaca CLI is the agent's hands and every
+      order is a recorded, replayable invocation. The MCP server is the window, and a proxy
+      enforces that it stays one.</p>
+    <div class="stack" id="stackgrid"></div>
+    <div class="note" id="feed"></div>
+  </section>
+
+  <section id="log">
+    <h2>Decisions</h2>
+    <p class="lede">Fills, refusals, risk reviews and corrections in one stream. A decision
+      not to trade is logged with the same weight as a trade.</p>
+    <div class="scroll"><table>
+      <thead><tr><th style="width:70px">Time</th><th style="width:100px">Type</th>
+      <th style="width:200px">What</th><th>Detail</th></tr></thead>
+      <tbody id="logbody"></tbody>
+    </table></div>
+  </section>
+
+  <footer>
+    <div><span class="wordmark" style="font-size:12px">HALFSPREAD</span> &nbsp; autonomous options
+      agent on Alpaca paper trading. Source and full journal at
+      <a href="https://github.com/ahammadshawki8/halfspread">github.com/ahammadshawki8/halfspread</a>.</div>
+    <div style="margin-top:9px">Paper trading is a simulation. Hypothetical results do not represent
+      actual trading and do not guarantee future results. Options carry substantial risk and are not
+      suitable for every investor. Nothing here is investment advice.</div>
+  </footer>
+</main>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const money=n=>(n<0?"-":"")+"$"+Math.abs(Number(n)||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const dir=n=>n>0?"up":n<0?"down":"";
+const esc=s=>String(s==null?"":s).replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]));
+const COL={SPY:"var(--ink)",XSP:"var(--ask)",SPXW:"var(--measure)"};
+
+function renderLadder(d){
+  const st=d.spread_story;
+  if(!st){$("#ladder").innerHTML='<div class="empty">No paired quotes recorded yet.</div>';return;}
+  const o=st.open,l=st.latest;
+  $("#ladtitle").textContent=st.symbol+(st.is_held?", a contract this desk is short":"");
+  $("#ladsub").textContent="The same option, quoted at the opening bell and again just now. "+
+    "Bid on the left, ask on the right, and between them the gap you cross to trade.";
+  const lo=Math.min(o.bid,l.bid)*0.7, hi=Math.max(o.ask,l.ask)*1.08;
+  const X=v=>((v-lo)/(hi-lo))*100;
+  const rung=(q,label,sub)=>{
+    const bx=X(q.bid), ax=X(q.ask), w=Math.max(ax-bx,0.7);
+    return `<div class="rung">
+      <div class="when"><em>${label}</em>${sub}</div>
+      <div class="bar"><div class="track"></div>
+        <div class="quote b" style="left:${bx}%"></div>
+        <div class="quote a" style="left:${ax}%"></div>
+        <div class="qlab b" style="left:${bx}%;transform:translateX(-100%);padding-right:9px">bid ${q.bid.toFixed(2)}</div>
+        <div class="qlab a" style="left:${ax}%;padding-left:9px">ask ${q.ask.toFixed(2)}</div>
+        <div class="gap" data-w="${w}" style="left:${bx}%;width:0%"></div>
+        <div class="gaplab" style="left:${bx+w/2}%">${q.half_pct.toFixed(2)}% of mid to cross</div>
+      </div></div>`;};
+  $("#ladder").innerHTML=rung(o,"At the open",o.ts.slice(11,16)+" UTC")+
+                         rung(l,"Now",l.ts.slice(11,16)+" UTC");
+  const grow=()=>document.querySelectorAll(".gap").forEach(g=>{g.style.width=g.dataset.w+"%";});
+  if(window.matchMedia("(prefers-reduced-motion:reduce)").matches) grow();
+  else requestAnimationFrame(()=>setTimeout(grow,280));
+  const same=Math.abs(l.width-o.width)<0.005;
+  $("#ladverdict").innerHTML=
+    `<span class="big">${st.times_wider}x</span> more expensive to cross, on the same contract. `+
+    (same
+      ? `The gap never moved in cents: ${o.width.toFixed(2)} at the open and ${l.width.toFixed(2)} now.
+         What shrank is the option, from ${o.mid.toFixed(2)} to ${l.mid.toFixed(2)}, so a fixed toll
+         takes a larger share of every trade as expiry approaches.`
+      : `The gap widened from ${o.width.toFixed(2)} to ${l.width.toFixed(2)} while the option decayed,
+         so the cost compounds from both directions.`)+
+    ` This desk pays that toll once, on the way in, and lets the position settle rather than paying
+      it again on the way out.`;
+}
+
+function cell(k,v,n,cls,lead){
+  return `<div class="cell${lead?" lead":""}"><div class="k">${k}</div>
+    <div class="v num ${cls||""}">${v}</div><div class="n">${n}</div></div>`;
+}
+function renderLedger(d){
+  const L=d.ledger||{},A=d.account||{},C=d.counts||{},S=d.scan_totals||{};
+  const pnl=A.pnl||0, openNow=(C.fills||0)-(L.positions_resolved||0);
+  $("#ledgergrid").innerHTML=
+    cell("Account",money(pnl),
+      openNow>0?`Mark to market with ${openNow} position${openNow>1?"s":""} still open. Settles at expiry.`
+               :`Against a $${(A.starting_equity||100000).toLocaleString()} start.`,dir(pnl),true)+
+    cell("Entry cost paid",money(L.entry_cost_paid),
+      "Measured on every leg before the order was sent.","meas")+
+    (openNow>0
+      ? cell("Exit cost at stake",money(L.exit_cost_at_stake),
+          `What closing the ${L.open_positions_priced} open position${L.open_positions_priced>1?"s":""} would cost right now, avoided by letting them settle.`,"meas")
+      : cell("Exit cost avoided",money(L.exit_cost_avoided_by_settling),
+          "By settling instead of closing.","up"))+
+    cell("Exit cost paid",money(L.exit_cost_paid),
+      "Only when a short strike was breached.",(L.exit_cost_paid||0)>0?"down":"")+
+    cell("Candidates priced",(S.candidates_priced||0).toLocaleString(),
+      `${(S.candidates_admissible||0).toLocaleString()} cleared the gates across ${S.scans||0} scans.`)+
+    cell("Refused",String((C.refusals||0)+(C.vetoes||0)),
+      "Decisions not to trade, each logged with its reason.");
+}
+
+const METHOD=[
+ ["Preflight","clock, account","Refuses to act unless the market is open, the account is active and options level three is live."],
+ ["Observe","chain, parity","Pulls the chain for every underlying. Alpaca publishes no index spot, so for XSP and SPXW the forward is recovered from <b>put-call parity</b> on the chain itself."],
+ ["Price","implied vol","The feed returns zero greeks and null implied volatility at every strike, so the agent <b>solves its own</b> by bisection and derives delta, gamma, theta and vega."],
+ ["Cost","the measurement","Credit at mid against credit actually fillable, leg by leg. <b>Nothing reaches the broker</b> without a measured entry cost attached."],
+ ["Select","net EV","Verticals and four-leg condors, same-day and next-session expiries, all scored onto one ranking. Structure and expiry are decisions, not defaults."],
+ ["Gate","hard limits","Out-of-the-money short strike, win probability at least 0.85, and caps on loss per position and per day. Every rejection carries a specific reason."],
+ ["Review","bounded model","An open-weights model reads live headlines for event risk. It can <b>scale size down and nothing else</b>; the multiplier is clamped in code, not asked for in a prompt."],
+ ["Re-quote","before sending","Scanning takes seconds and the market moves inside them. Both legs are re-read immediately before submission and the drift is recorded."],
+ ["Execute","Alpaca CLI","One multi-leg order, all legs covered. The invocation is journalled verbatim and can be replayed by hand."],
+ ["Settle","no second trade","A breach is judged on arithmetic, not distance: close only if buying the package back costs materially less than the expected terminal intrinsic. Otherwise hold, and let it expire for nothing."],
+];
+function renderMethod(){
+  $("#methodlist").innerHTML=METHOD.map(([t,s,dd])=>
+    `<div class="step"><div class="t">${t}<span>${s}</span></div><div class="d">${dd}</div></div>`).join("");
+}
+
+const REFS=[
+ ["Vilkov (2026). 0DTE Trading Rules: Tail Risk, Implementation, and Tactical Timing",
+  "An August 2026 correction reversed every net-of-cost conclusion in this paper: the bid-ask half-spread had been charged at one hundredth of its true size. Iron condors moved from -0.96 to -2.67 net Sharpe. It is the reason this desk treats execution cost as a first-order term rather than a rounding detail.",
+  "SSRN 4641356. Replication package at github.com/vilkovgr/0dte-strategies"],
+ ["Yao and Zheng (2026). Beyond Agent Architecture: Execution Assumptions and Reproducibility in LLM-Based Trading Systems",
+  "Audits thirty studies and finds execution semantics and cost treatment are the least reported dimensions of the literature. The verification section on this page answers that audit directly.",
+  "arXiv:2606.08285"],
+ ["The Alpha Illusion (2026). Reported Alpha from LLM Trading Agents Should Not Be Treated as Deployment Evidence",
+  "Reported returns from language-model agents do not survive contact with deployment. This desk publishes its refusals and its corrections alongside its fills, so the record cannot be read selectively.",
+  "arXiv:2605.16895"],
+ ["Profit Mirage (2025). Revisiting Information Leakage in LLM-based Financial Agents",
+  "Backtested performance collapses out of sample because models recall outcomes rather than learn causes. Nothing here is fitted: the breach distribution is counted from measured sessions, and the model is handed no parameter to tune.",
+  "arXiv:2510.07920"],
+];
+function renderRefs(){
+  $("#refs").innerHTML=REFS.map(([c,u,s])=>
+    `<li><div><cite>${c}</cite><div class="use">${u}</div><div class="src">${s}</div></div></li>`).join("");
+}
+
+const STACK=[
+ ["Trading API","Multi-leg orders, two-leg verticals and four-leg iron condors, every leg covered inside one order for level three."],
+ ["Alpaca CLI","The agent's hands. Each broker action is an invocation recorded verbatim in the journal and replayable by hand."],
+ ["MCP server","The window onto the desk, behind a proxy that strips every mutating tool. Eleven of thirty-five blocked, twenty-four reads allowed."],
+ ["Market Data API","Chains, snapshots, news, and the intraday bar history behind the measured breach distribution."],
+ ["GitHub Actions","The runtime. A session runs unattended and commits its own journal back, so the audit trail is timestamped by git."],
+ ["Groq, open weights","The bounded risk review. Reachable or not, the deterministic decision stands."],
+];
+function renderStack(){
+  $("#stackgrid").innerHTML=STACK.map(([h,p])=>`<div class="mod"><h3>${h}</h3><p>${p}</p></div>`).join("");
+}
+
+function axes(w,pad,ticks,fmt){
+  return ticks.map(t=>`<line class="gl" x1="${pad.l}" y1="${t.y}" x2="${w-pad.r}" y2="${t.y}"/>
+    <text class="ax" x="${pad.l-9}" y="${t.y+3.5}" text-anchor="end">${fmt(t.v)}</text>`).join("");
+}
+
+function renderCurve(d){
+  const cv=d.cost_curves||{};
+  const names=Object.keys(cv).filter(k=>(cv[k].points||[]).length>2);
+  if(!names.length){$("#curve").innerHTML='<div class="empty">No observations yet.</div>';return;}
+  const BIN=0.5,MIN=2;
+  const binned=n=>{const b=new Map();
+    for(const p of cv[n].points){if(!(p.hs>0))continue;
+      const k=Math.round(p.m/BIN)*BIN;if(!b.has(k))b.set(k,[]);b.get(k).push(p.hs);}
+    return [...b.entries()].filter(([,v])=>v.length>=MIN)
+      .map(([m,v])=>({m,hs:v.sort((x,y)=>x-y)[Math.floor(v.length/2)]})).sort((a,b)=>a.m-b.m);};
+  const series=names.map(n=>({n,pts:binned(n)})).filter(x=>x.pts.length>1);
+  if(!series.length){$("#curve").innerHTML='<div class="empty">Not enough two-sided quotes yet.</div>';return;}
+  const w=1000,h=330,pad={l:52,r:14,t:14,b:40},xs=[-5,1];
+  const all=series.flatMap(x=>x.pts.map(p=>p.hs));
+  const ylo=Math.max(.3,Math.min(...all)*.8), yhi=Math.min(120,Math.max(...all)*1.3);
+  const L=v=>Math.log10(Math.max(v,ylo));
+  const X=v=>pad.l+(w-pad.l-pad.r)*((v-xs[0])/(xs[1]-xs[0]));
+  const Y=v=>pad.t+(h-pad.t-pad.b)*(1-(L(v)-L(ylo))/(L(yhi)-L(ylo)));
+  let s=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Half-spread as a share of mid across moneyness, log scale">`;
+  s+=axes(w,pad,[1,2,5,10,20,50,100].filter(t=>t>=ylo&&t<=yhi).map(v=>({v,y:Y(v)})),v=>v+"%");
+  const nb=Math.max(...names.map(n=>cv[n].no_bid_from_pct==null?-99:cv[n].no_bid_from_pct));
+  if(nb>-90&&nb>xs[0]) s+=`<rect x="${X(xs[0])}" y="${pad.t}" width="${Math.max(0,X(nb)-X(xs[0]))}"
+    height="${h-pad.t-pad.b}" fill="var(--ask)" opacity=".07"/>
+    <text class="lb" x="${X(xs[0])+8}" y="${h-pad.b-9}">no bid, untradeable</text>`;
+  s+=`<line class="gl" x1="${X(0)}" y1="${pad.t}" x2="${X(0)}" y2="${h-pad.b}" stroke-dasharray="3 3"/>
+      <text class="lb" x="${X(0)+7}" y="${pad.t+11}">at the money</text>`;
+  for(let i=0;i<=6;i++){const v=xs[0]+(xs[1]-xs[0])*i/6;
+    s+=`<text class="ax" x="${X(v)}" y="${h-pad.b+17}" text-anchor="middle">${v.toFixed(1)}%</text>`;}
+  series.forEach((x,i)=>{
+    s+=`<path d="${x.pts.map((p,j)=>`${j?"L":"M"}${X(p.m).toFixed(1)},${Y(p.hs).toFixed(1)}`).join("")}"
+      fill="none" stroke="${COL[x.n]||"var(--muted)"}" stroke-width="2" stroke-linejoin="round"/>`;
+    x.pts.forEach(p=>s+=`<circle cx="${X(p.m).toFixed(1)}" cy="${Y(p.hs).toFixed(1)}" r="2.6" fill="${COL[x.n]||"var(--muted)"}"/>`);
+    s+=`<text class="lb" x="${pad.l+8}" y="${pad.t+13+i*16}" fill="${COL[x.n]}">${x.n}</text>`;});
+  s+=`<text class="lb" x="${pad.l}" y="${h-5}">moneyness, negative is further out of the money</text></svg>`;
+  $("#curve").innerHTML=s;
+  const f=(d.verification&&d.verification.facts)||{};
+  $("#curvecap").textContent=(f.half_spread_atm_pct&&f.half_spread_far_pct)
+    ? `SPY costs about ${f.half_spread_atm_pct.toFixed(2)}% of mid to cross at the money and `+
+      `${f.half_spread_far_pct.toFixed(1)}% two to three points out, a ${f.cost_curve_ratio} times increase `+
+      `for moving to the strike a delta screen would pick. Past the shaded edge there is no bid at all.`
+    : "Half the bid-ask as a share of the option's mid price.";
+}
+
+function renderWidening(d){
+  const W=d.widening||{};
+  const series=Object.keys(W).map(n=>({n,s:(W[n].series||[]).filter(p=>Object.keys(p.vs_open||{}).length)}))
+                             .filter(x=>x.s.length>1);
+  if(!series.length){$("#widen").innerHTML='<div class="empty">Populates once the session has two readings.</div>';return;}
+  const w=1000,h=290,pad={l:52,r:14,t:14,b:38};
+  const avg=p=>{const v=Object.values(p.vs_open);return v.reduce((a,b)=>a+b,0)/v.length;};
+  const ymax=Math.max(2,Math.ceil(Math.max(...series.flatMap(x=>x.s.map(avg)))));
+  const n=Math.max(...series.map(x=>x.s.length))-1||1;
+  const X=i=>pad.l+(w-pad.l-pad.r)*(i/n), Y=v=>pad.t+(h-pad.t-pad.b)*(1-Math.min(v,ymax)/ymax);
+  const ticks=[];for(let i=0;i<=4;i++){const v=ymax*i/4;ticks.push({v,y:Y(v)});}
+  let s=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Spread widening versus the session open">`;
+  s+=axes(w,pad,ticks,v=>v.toFixed(1)+"x");
+  s+=`<line x1="${pad.l}" y1="${Y(1)}" x2="${w-pad.r}" y2="${Y(1)}" stroke="var(--muted)" stroke-dasharray="4 3"/>
+      <text class="lb" x="${pad.l+7}" y="${Y(1)-7}">unchanged since the open</text>`;
+  series.forEach((x,k)=>{
+    s+=`<path d="${x.s.map((p,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(avg(p)).toFixed(1)}`).join("")}"
+      fill="none" stroke="${COL[x.n]||"var(--muted)"}" stroke-width="2"/>`;
+    s+=`<text class="lb" x="${pad.l+8}" y="${pad.t+13+k*16}" fill="${COL[x.n]}">${x.n}</text>`;});
+  s+=`<text class="lb" x="${pad.l}" y="${h-5}">session progress</text></svg>`;
+  $("#widen").innerHTML=s;
+  const spy=series.find(x=>x.n==="SPY")||series[0];
+  $("#widencap").textContent=`${spy.n}: near-the-money spreads are `+
+    `${avg(spy.s[spy.s.length-1]).toFixed(2)} times their level at the session's first reading, across `+
+    `${spy.s.length} observations. Nothing about the position changed. Only the hour did.`;
+}
+
+function renderEmpirical(d){
+  const rows=((d.empirical||{}).by_hour||[]).slice().sort((a,b)=>a.hour-b.hour);
+  if(rows.length<2){$("#emp").innerHTML='<div class="empty">No history cached.</div>';return;}
+  const w=1000,h=300,pad={l:56,r:14,t:14,b:40};
+  const lo=Math.min(...rows.map(r=>r.p01))*1.12, hi=Math.max(...rows.map(r=>r.p95))*1.5;
+  const X=i=>pad.l+(w-pad.l-pad.r)*(i/(rows.length-1));
+  const Y=v=>pad.t+(h-pad.t-pad.b)*(1-(v-lo)/(hi-lo));
+  const ticks=[];for(let i=0;i<=4;i++){const v=hi-(hi-lo)*i/4;ticks.push({v,y:Y(v)});}
+  let s=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Distribution of the SPY move from each hour to the close">`;
+  s+=axes(w,pad,ticks,v=>v.toFixed(1)+"%");
+  s+=`<line x1="${pad.l}" y1="${Y(0)}" x2="${w-pad.r}" y2="${Y(0)}" stroke="var(--muted)" stroke-dasharray="4 3"/>`;
+  const band=rows.map((r,i)=>`${X(i).toFixed(1)},${Y(r.p95).toFixed(1)}`).join(" ")+" "+
+             rows.slice().reverse().map((r,i)=>`${X(rows.length-1-i).toFixed(1)},${Y(r.p05).toFixed(1)}`).join(" ");
+  s+=`<polygon points="${band}" fill="var(--bid)" opacity=".15"/>`;
+  s+=`<path d="${rows.map((r,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(r.p01).toFixed(1)}`).join("")}"
+      fill="none" stroke="var(--ask)" stroke-width="2.2"/>`;
+  s+=`<path d="${rows.map((r,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(r.p50).toFixed(1)}`).join("")}"
+      fill="none" stroke="var(--muted)" stroke-width="1.2"/>`;
+  rows.forEach((r,i)=>s+=`<text class="ax" x="${X(i)}" y="${h-pad.b+17}" text-anchor="middle">${r.hour}:00</text>`);
+  s+=`<text class="lb" x="${pad.l+8}" y="${pad.t+13}" fill="var(--ask)">worst 1 in 100 sessions</text>
+      <text class="lb" x="${pad.l+8}" y="${pad.t+29}" fill="var(--bid)">middle 90 in 100</text>
+      <text class="lb" x="${pad.l}" y="${h-5}">hour of the trading day, Eastern</text></svg>`;
+  $("#emp").innerHTML=s;
+  const f=rows[0],e=d.empirical;
+  $("#empcap").textContent=`${e.sessions} SPY sessions since ${e.start}, ${e.bars} bars. At ${f.hour}:00 `+
+    `Eastern the worst one in a hundred sessions still fell ${Math.abs(f.p01).toFixed(2)}% into the close, `+
+    `against a deviation of ${f.stdev.toFixed(2)}%. That is ${(Math.abs(f.p01)/f.stdev).toFixed(1)} deviations, `+
+    `where a normal distribution puts 2.3. It is the kind of tail a diffusion prices as nearly impossible.`;
+}
+
+function renderVerify(d){
+  const v=d.verification;
+  if(!v||v.error){$("#verifybox").innerHTML='<div class="empty">Verifier did not run.</div>';return;}
+  $("#verifybox").innerHTML=
+    `<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:16px">
+      <span class="num ${v.failed?"down":"up"}" style="font-size:30px;font-weight:600">${v.passed}/${v.total}</span>
+      <span style="color:var(--ink-2);font-size:15px">claims reproduce from the journal alone</span></div>
+     <table><tbody>${v.rows.map(r=>`<tr>
+       <td style="width:60px"><span class="tag ${r.ok?"pass":"fail"}">${r.ok?"pass":"fail"}</span></td>
+       <td>${esc(r.claim)}</td>
+       <td class="m" style="color:var(--muted);white-space:normal;width:42%">${esc(r.evidence)}</td>
+     </tr>`).join("")}</tbody></table>`;
+}
+
+function renderLog(d){
+  const rows=d.decisions||[];
+  if(!rows.length){$("#logbody").innerHTML='<tr><td colspan="4" class="empty">No decisions recorded yet.</td></tr>';return;}
+  $("#logbody").innerHTML=rows.map(r=>`<tr>
+    <td class="m">${esc((r.ts||"").slice(11,19))}</td>
+    <td><span class="tag ${esc(r.type)}">${esc(r.type)}</span></td>
+    <td class="m">${esc(r.what)}</td>
+    <td>${esc(r.detail)}</td></tr>`).join("");
+}
+
+function spy(){
+  const links=[...document.querySelectorAll("nav a")];
+  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;
+    links.forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+e.target.id));});},
+    {rootMargin:"-15% 0px -70% 0px"});
+  document.querySelectorAll("section[id]").forEach(s=>io.observe(s));
+}
+
+renderMethod(); renderRefs(); renderStack();
+fetch("data.json?t="+Date.now()).then(r=>r.json()).then(d=>{
+  $("#acct").textContent=(d.account&&d.account.account_number)||"paper";
+  $("#eq").textContent=(d.account&&d.account.equity)?money(d.account.equity):"";
+  $("#gen").textContent=(d.generated_at||"").replace("T"," ").replace("+00:00"," UTC");
+  $("#live").innerHTML='<span class="beat"></span>'+((d.counts&&d.counts.journal_records)||0).toLocaleString()+" journal records";
+  $("#feed").textContent=d.feed_note||"";
+  renderLadder(d); renderLedger(d); renderCurve(d);
+  renderWidening(d); renderEmpirical(d); renderVerify(d); renderLog(d);
+  spy();
+}).catch(e=>{
+  $("#live").innerHTML='<span class="beat" style="background:var(--ask)"></span>data unavailable';
+  $("#ledgergrid").innerHTML='<div class="empty">Could not load data.json: '+esc(e)+'</div>';
+});
+</script>
+</body>
+</html>

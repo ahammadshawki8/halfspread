@@ -95,6 +95,61 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
             "no_bid_from_pct": max((p["moneyness_pct"] for p in nobid), default=None),
         }
 
+    # ---- the hero: one real contract, quoted twice -------------------------
+    # The thesis is not a chart, it is a gap. Find the near-the-money strike
+    # observed both earliest and latest in the session and hand the page its
+    # two quotes, so the page can show the same contract widening rather than
+    # asserting that it did.
+    spread_story = None
+    traded: set = set()
+    # Regular session only. A pre-market observation carries the previous
+    # close's stale quotes and would flatter the comparison.
+    spy_obs = sorted([r for r in records
+                      if r.get("kind") == "observation" and r.get("underlying") == "SPY"
+                      and "13:30" <= r["ts"][11:16] <= "20:00"],
+                     key=lambda r: r["ts"])
+    if len(spy_obs) >= 2:
+        def near_money(rec):
+            out = {}
+            for row in rec.get("rows", []):
+                if (row.get("bid") or 0) > 0 and -1.2 <= row["moneyness_pct"] <= 0.2:
+                    out[row["strike"]] = row
+            return out
+        first, last = near_money(spy_obs[0]), near_money(spy_obs[-1])
+        shared = set(first) & set(last)
+        if shared:
+            # Prefer a strike the agent actually shorted. That is the contract
+            # it is carrying, so "what would leaving cost" is a real question
+            # about a real position rather than an illustration. At-the-money
+            # strikes stay penny-wide all day; the cost lives where we trade.
+            traded = set()
+            for r in intents:
+                sym = (r.get("evaluation") or {}).get("short") or ""
+                parsed = __import__("agent.chain", fromlist=["parse_occ"]).parse_occ(sym)
+                if parsed and parsed[0] == "SPY":
+                    traded.add(parsed[1])
+            pool = (shared & traded) or shared
+            k = max(pool, key=lambda s: last[s]["half_spread_pct"]) if (shared & traded)                 else min(pool, key=lambda s: abs(first[s]["moneyness_pct"]))
+            a, b = first[k], last[k]
+            if a["ask"] > a["bid"] and b["ask"] >= b["bid"] and a["half_spread_pct"] > 0:
+                wa, wb = a["ask"] - a["bid"], b["ask"] - b["bid"]
+                # The gap in cents can shrink as the option decays while the gap
+                # as a share of what you are trading grows. The second number is
+                # the one that costs you, so that is the one the page leads with.
+                spread_story = {
+                    "symbol": f"SPY {k:g} put",
+                    "strike": k,
+                    "open": {"ts": spy_obs[0]["ts"], "bid": a["bid"], "ask": a["ask"],
+                             "mid": round((a["bid"] + a["ask"]) / 2, 4),
+                             "width": round(wa, 4), "half_pct": a["half_spread_pct"]},
+                    "latest": {"ts": spy_obs[-1]["ts"], "bid": b["bid"], "ask": b["ask"],
+                               "mid": round((b["bid"] + b["ask"]) / 2, 4),
+                               "width": round(wb, 4), "half_pct": b["half_spread_pct"]},
+                    "times_wider": round(b["half_spread_pct"] / a["half_spread_pct"], 2),
+                    "width_change": round(wb - wa, 4),
+                    "is_held": k in traded,
+                }
+
     # ---- widening through the session ------------------------------------
     widening = observe.widening_report()
 
@@ -215,6 +270,7 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
             "vetoes": len([v for v in vetoes if v.get("action") != "proceed"]),
             "refusals": len(refusals), "journal_records": len(records),
         },
+        "spread_story": spread_story,
         "cost_curves": curves,
         "widening": widening,
         "decisions": decisions[:80],
