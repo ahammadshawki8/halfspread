@@ -1076,8 +1076,8 @@ function renderVideo(){
   if(!f) return;
   const id=youtubeId(VIDEO);
   if(!id){
-    f.innerHTML='<div class="placeholder"><b>Demo film</b>'+
-      'Everything it will show is already on this page,<br>measured and running live.</div>';
+    f.innerHTML='<div class="placeholder"><span><b>Demo film</b>'+
+      'Everything it will show is already on this page,<br>measured and running live.</span></div>';
     note.textContent="";
     return;
   }
