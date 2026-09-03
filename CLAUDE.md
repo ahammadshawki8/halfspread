@@ -129,6 +129,49 @@ Author's verdict: *"No strategy or basket retains a positive net Sharpe ratio."*
 - **Index options in paper:** SPX, SPXW, VIX, VIXW, DJX, XSP — European, cash-settled. ⚠️ **Market data availability for these is UNVERIFIED** — Alpaca's launch post said index data was not yet in their Market Data offering. **Tier 0 must settle this.**
 - **Market data plan: Basic (free) = `indicative` feed for options.** Alpaca staff: *"The quotes are not actual OPRA quotes, they're just 'indicative' derivatives. The trades are also derivatives and they're delayed by 15 minutes."* 200 req/min. OPRA needs Algo Trader Plus ($99/mo) — **we do not buy it (R3)**.
 
+### 5.1 Tier 0 measured findings (2026-09-03, ~11:15 UTC, market closed, quotes = 2026-09-02 close)
+
+**Accounts**
+
+| | DEV | COMP |
+|---|---|---|
+| Profile | `dev` | `comp` |
+| Account no. | PA3WUMDUSE9N | PA31RB6YR1V6 |
+| **Account ID** | — | **`0509a308-f1ef-44e2-8e8b-8a6d0893f84b`** ← submission form |
+| Cash / equity | $100,000 | **$100,000 exactly** |
+| Options level | 3 | 3 |
+| Created | — | 2026-09-03 09:27:54Z |
+| Orders / positions | — | **0 / 0 — pristine** |
+
+Switch with `alpaca -p dev …` / `alpaca -p comp …`. Active profile is `dev`.
+
+**Finding 1 — index option data IS available on the free tier.** The launch-post caveat is outdated.
+`SPY` ✅ · `XSP` ✅ · `SPXW` ✅ · `SPX` returns empty (SPX is the AM-settled monthly root; **use SPXW** for weeklies/dailies).
+Must pass `--feed indicative` — the CLI defaults to `--feed opra`, which we are not entitled to.
+
+**Finding 2 — greeks and implied volatility are NOT provided.** Every contract at every expiry returns `greeks: {delta:0, gamma:0, rho:0, theta:0, vega:0}` and `impliedVolatility: null` on the indicative feed. Not a market-hours artifact — 30-day contracts behave the same.
+➡️ **We compute our own.** `pricing.py` must solve implied vol from mid price (Black-Scholes, bisection/Newton) and derive delta/gamma/theta/vega. This is an asset, not a setback: strike selection rests on a pricing layer we own and can show.
+
+**Finding 3 — the cost curve, measured. This reshapes the strategy.**
+Half-spread as a percentage of mid, 0DTE puts, SPY spot 764.34:
+
+| Moneyness | SPY half-spread | SPXW half-spread |
+|---|---|---|
+| ATM | **1.0%** | 1.9% |
+| −1% OTM | **3.0%** | 4.6% |
+| −2% OTM | **11.1%** | 10.2% |
+| −3% OTM | **14.3%** | up to **70%** |
+
+XSP is unusable: **15–25% half-spread even at the money.**
+
+➡️ **Relative execution cost explodes as you go OTM.** The textbook "sell the 15–20Δ strike" plan lands exactly where the spread eats 10–15% of mid *per leg* — roughly 20–30% of the credit gone at entry, before any risk is taken.
+
+➡️ **This is the project's core finding and it is our own measurement, not a citation.** There is a real, quantified tension: far-OTM = higher win rate but ruinous relative cost; near-ATM = cheap execution but lower win rate. Nobody in the field models it. **The agent's job is to find the strike that maximises net EV after measured entry cost — which will not be the strike a delta-only screen picks.**
+
+**Instrument decision: SPY primary.** Cheapest at every moneyness, penny-wide near the money, deepest liquidity. Cost is the whole thesis, so picking a 2× costlier instrument for narrative points would be self-refuting.
+**But the agent evaluates SPY, XSP and SPXW every cycle on net EV and journals the comparison**, letting measurement pick the winner. Same code path, keeps index options in play, and the comparison table is itself a demo asset.
+Caveat: SPY is American-style and physically settled, so an ITM finish means assignment. That only bites when the short strike is breached — precisely the case where we would already be closing.
+
 ### Alpaca CLI command map
 ```
 alpaca profile login [--api-key]     # OAuth (paper-only) or API keys
@@ -157,7 +200,8 @@ halfspread/
 ├── agent/
 │   ├── config.py          # profiles, thresholds, universe, account routing
 │   ├── cli.py             # thin wrapper: run alpaca CLI, parse JSON, log invocation
-│   ├── chain.py           # fetch chain, filter by DTE + delta band
+│   ├── pricing.py         # ★ Black-Scholes: solve IV from mid, derive greeks (feed gives none)
+│   ├── chain.py           # fetch chain, filter by DTE + moneyness band
 │   ├── cost.py            # ★ half-spread measurement, net-EV, exit-cost counterfactual
 │   ├── strategy.py        # candidate spread construction + ranking
 │   ├── risk.py            # ES sizing, position/loss limits, pin-risk gate
@@ -180,10 +224,11 @@ halfspread/
 ```
 1  preflight    market open? account healthy? COMP vs DEV correct?
 2  observe      underlying price + option chain (+ greeks/IV snapshot)
-3  filter       target DTE (0–1) and delta band (~15–20Δ short strike)
+3  filter       target DTE (0–1); compute own IV + greeks (pricing.py); moneyness band
 4  price        for each candidate: bid/ask both legs -> credit at realistic fill
 5  cost         measure entry half-spread; compute net EV after cost
-6  gate         net EV > threshold? ES sizing OK? position/loss limits OK?
+6  select       maximise net EV across strikes AND across SPY/XSP/SPXW
+6b gate         net EV > threshold? ES sizing OK? position/loss limits OK?
                 -> if NO: journal the refusal with the numbers, stop
 7  execute      build mleg order, submit via CLI, journal invocation + fill
 8  monitor      poll short-strike distance; breach -> emergency close (cost event)
@@ -224,9 +269,9 @@ halfspread/
 
 | | |
 |---|---|
-| **Instrument** | SPXW / XSP 0DTE–1DTE (European, cash-settled, no assignment). **Fallback: SPY/QQQ** if index data unavailable — an OTM expiry still costs nothing. |
-| **Structure** | Far-OTM defined-risk credit spread. Short strike ~15–20Δ. Two legs, one `mleg` order. Both legs covered ⇒ Level 3 legal. |
-| **Entry** | Cost-gated: measure half-spread per leg, compute net EV, fire only above threshold. |
+| **Instrument** | **SPY primary** (measured cheapest, §5.1). Agent also prices XSP and SPXW each cycle and picks on net EV; the comparison is journalled. |
+| **Structure** | Defined-risk put credit spread. **Strike chosen by net-EV maximisation, NOT by a delta target** — §5.1 Finding 3 shows the 15–20Δ strike is where relative cost is worst. Two legs, one `mleg` order. Both legs covered ⇒ Level 3 legal. |
+| **Entry** | Cost-gated: measure half-spread per leg from live quotes, compute net EV, fire only above threshold. |
 | **Exit** | **Settlement, not a trade.** Emergency close exists and is journalled explicitly as a cost event. |
 | **Sizing** | Against expected shortfall, not mean P&L. Hard cap on max loss per position and per day. |
 | **P&L posture** | High win-rate grind. Target a clean green day. A red account poisons every other criterion. |
@@ -240,17 +285,18 @@ halfspread/
 
 ## 9. Implementation tiers
 
-### Tier 0 — Foundations & the blocking check
+### Tier 0 — Foundations & the blocking check ✅ COMPLETE
 - [x] Verify toolchain (Python, Node, git, gh, Docker)
 - [x] Install Alpaca CLI → `bin/alpaca.exe` v0.0.14
 - [x] Install `uv`/`uvx`
 - [x] Create GitHub repo `ahammadshawki8/halfspread`
 - [x] Write CLAUDE.md
-- [ ] Receive DEV API key + secret; `alpaca profile login --api-key`
-- [ ] **BLOCKING: verify index option data on the free tier** (`alpaca data option chain SPXW…`). Decides SPXW/XSP vs SPY. Nothing downstream is final until this returns.
-- [ ] Verify chain returns greeks + IV on Basic plan
-- [ ] Measure real bid/ask widths on target strikes; sanity-check the cost model's inputs
-- [ ] `.gitignore` (`.env`, `bin/`, `__pycache__`, venv)
+- [x] `.gitignore` (`.env`, `bin/`, `__pycache__`, venv)
+- [x] DEV keys loaded; CLI profile `dev` authenticated
+- [x] COMP keys loaded; CLI profile `comp` authenticated; account verified pristine
+- [x] **BLOCKING CHECK RESOLVED — index option data IS available on the free tier** (see §5.1)
+- [x] Greeks/IV availability checked — **NOT available** (see §5.1)
+- [x] Measured real bid/ask widths across moneyness → instrument decision made (§5.1)
 
 ### Tier 1 — Read-only data layer
 - [ ] `cli.py` — CLI wrapper, JSON parse, invocation logging
@@ -292,13 +338,14 @@ halfspread/
 
 Newest first. One line per session. Keep it terse.
 
-- **2026-09-03 (session 1)** — Researched hackathon + ~90 competitors. Killed two candidates (dispersion; Vilkov's rules) on evidence. Locked HALFSPREAD. Installed Alpaca CLI + uv, created repo, wrote CLAUDE.md. **Blocked on: DEV API keys → index-option data check.**
+- **2026-09-03 (session 1)** — Researched hackathon + ~90 competitors. Killed two candidates (dispersion; Vilkov's rules) on evidence. Locked HALFSPREAD. Installed Alpaca CLI + uv, created repo, wrote CLAUDE.md. DEV + COMP keys loaded and both profiles verified; COMP pristine at $100k. **Tier 0 complete** — index option data available, greeks NOT available (we compute our own), and the measured cost curve (§5.1 Finding 3) reshaped strike selection from delta-target to net-EV maximisation. Next: Tier 1.
 
 ---
 
 ## 11. Open questions / blockers
 
-- 🔴 **DEV API key + secret** — needed to start Tier 0's blocking check.
-- 🔴 **COMP account** must be created with **exactly $100,000** (balance is fixed at creation; only a reset changes it, which muddies the "brand-new account" claim).
-- 🟡 Index option market data on the free tier — unverified, decides the instrument.
-- 🟡 Featherless AI ($25 free credits, no card) — optional partner integration; only if a bounded, honest role exists that doesn't contradict the deterministic-core design.
+- ✅ ~~DEV keys~~ · ✅ ~~COMP account at exactly $100,000~~ · ✅ ~~index option data~~ — all resolved, see §5.1.
+- 🟡 **Greeks must be computed in-house** (feed provides none). `pricing.py` is now on the critical path for Tier 1.
+- 🟡 **Re-measure the cost curve during market hours.** §5.1 Finding 3 used 2026-09-02 closing quotes. Spreads widen intraday, especially after ~15:00 ET — confirm before the first COMP order.
+- 🟡 Featherless AI ($25 free credits, no card) — optional partner integration; only if a bounded, honest role exists that doesn't contradict the deterministic-core design. Owner's call.
+- 🟡 SPY assignment risk on an ITM finish (American, physically settled). Acceptable — only bites when the short strike is already breached — but `settle.py` must handle it.
