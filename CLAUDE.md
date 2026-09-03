@@ -481,6 +481,55 @@ halfspread/
 
 ---
 
+## 9b. Social engagement — DRAFTS (separate $500 x2 prize + a judging criterion)
+
+Not yet posted. Up to 5 links may be submitted. Tag **@lablabai** and **@AlpacaHQ** on X;
+**lablab.ai** and **Alpaca** on LinkedIn. Post from the owner's accounts; attach the chart
+named in each. Engagement counts, so post the numbers, not the adjectives.
+
+**1 — the finding (lead with this one)**
+> Every options agent I've seen reports what it made. None report what it *paid*.
+>
+> Measured on SPY 0DTE today: half the bid-ask is 1.0% of mid at the money and 14% two
+> points out. The strike a delta screen picks is the expensive one.
+>
+> Building @AlpacaHQ #hackathon w/ @lablabai
+> *[attach: cost curve, log scale]*
+
+**2 — the measurement that is the whole thesis**
+> Entry and exit spreads are identical at any single instant. So "the exit is expensive"
+> is a claim about *time*.
+>
+> I re-quoted the same SPY strikes every 5 minutes all session. They ended at **4.2x** the
+> spread they opened at.
+>
+> That's why my agent settles instead of closing. @AlpacaHQ @lablabai
+> *[attach: widening chart]*
+
+**3 — the correction (credibility, and it is a genuinely good story)**
+> A leading 2026 0DTE study was corrected last month. The bug? The bid-ask half-spread was
+> charged at 1/100th its real size. Every net Sharpe flipped negative. Iron condors went
+> -0.96 → -2.67.
+>
+> Fifteen agents in this hackathon trade that exact structure.
+> *[attach: the before/after table]*
+
+**4 — refusing to publish a number that wasn't real**
+> My dashboard showed +$316 realised. Every contract still had six hours to run.
+>
+> Bug: settlement compared expiry *dates*, so live positions resolved early. Fixed, records
+> purged, and the correction written into the journal where anyone can read it.
+>
+> The page is generated from that journal. A journal bug is a published lie. @AlpacaHQ
+
+**5 — the closing one, post after settlement with the real number**
+> Final: [P&L]. Entry cost paid: [x]. Exit cost paid: $0 — every position held to
+> settlement, so there was no closing trade to pay for.
+>
+> `python -m agent.verify` re-derives every number above from the committed journal. No API
+> key, no account. @lablabai @AlpacaHQ
+> *[attach: verification panel, 9/9]*
+
 ## 10. Session log
 
 Newest first. One line per session. Keep it terse.
