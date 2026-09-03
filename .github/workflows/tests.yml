@@ -1,0 +1,25 @@
+name: tests
+
+# Runs on every push. No credentials: the unit tests are pure arithmetic and
+# the verifier re-derives published claims from the committed journal, so CI
+# proves the same thing a stranger with a clone can prove.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Verify published claims against the journal
+        run: python -m agent.verify
