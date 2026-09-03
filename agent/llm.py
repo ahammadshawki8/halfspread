@@ -1,10 +1,10 @@
 """Bounded event-risk veto.
 
 The only place a language model touches this system. Its authority is
-deliberately one-directional: it can shrink a position or block it, and it
-can do nothing else. Strike selection, sizing, entry price and exit are
-decided by arithmetic in risk.py and cost.py and are not shown to the model
-as adjustable.
+deliberately one-directional and bounded at both ends: it can shrink a
+position, down to a floor, and it can do nothing else. Strike selection,
+sizing, entry price and exit are decided by arithmetic in risk.py and
+cost.py and are not shown to the model as adjustable.
 
 The clamp is enforced in code, not by prompt: whatever comes back, the size
 multiplier is forced into [0.0, 1.0]. A model that tries to double the
@@ -24,6 +24,15 @@ from dataclasses import dataclass
 
 from . import cli, config, journal
 
+# The reviewer scales size; it does not abstain. Every position it sees is
+# already defined-risk with a hard dollar cap enforced upstream, so the
+# proportionate response to elevated event risk is a smaller position, not
+# no position - the tail it is worried about is the one the structure has
+# already bounded. A "block" is therefore honoured as the floor multiplier
+# and logged as a conversion, so the model's judgement still shows up in the
+# size and in the journal without it acquiring a prohibition it was not given.
+VETO_FLOOR = 0.25
+
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 PRIMARY_MODEL = "openai/gpt-oss-120b"
 FALLBACK_MODEL = "qwen/qwen3.8-27b"
@@ -33,13 +42,13 @@ system has already chosen a defined-risk put credit spread. You cannot change th
 strikes, the price, or the exit. Your only job is to judge scheduled or breaking \
 EVENT RISK that would make selling downside premium into today's close unwise.
 
-Things that justify blocking or reducing:
+Things that justify reducing size:
 - A major scheduled macro release landing during or just before the holding period \
 (non-farm payrolls, CPI, PPI, FOMC decision or minutes, GDP, PCE).
 - Breaking geopolitical, credit or systemic news likely to move the index sharply.
 - An unusually large scheduled single-name event with index-level consequences.
 
-Things that DO NOT justify blocking:
+Things that DO NOT justify reducing:
 - Ordinary market commentary, analyst notes, price-target changes.
 - Routine single-stock earnings with no index-level consequence.
 - Speculation, opinion pieces, or "will the market go up today" filler.
@@ -66,6 +75,8 @@ class VetoDecision:
 
     @property
     def blocks(self) -> bool:
+        """True only if size was driven to nothing. With VETO_FLOOR in force
+        this should not happen through the model path."""
         return self.size_multiplier <= 0.0
 
 
@@ -141,7 +152,7 @@ def _coerce(raw: dict, model: str) -> VetoDecision:
     mult = max(0.0, min(1.0, mult))
 
     # Reconcile contradictions in the model's favour only when that means
-    # taking less risk.
+    # taking less risk, then apply the floor.
     if action == "block":
         mult = 0.0
     elif action == "proceed":
@@ -151,7 +162,18 @@ def _coerce(raw: dict, model: str) -> VetoDecision:
     elif mult <= 0.0:
         action, mult = "block", 0.0
 
-    reason = str(raw.get("reason", ""))[:200] or "no reason given"
+    converted = False
+    if mult < VETO_FLOOR:
+        mult = VETO_FLOOR
+        converted = action == "block"
+        action = "reduce"
+
+    if converted:
+        reason_prefix = "[block converted to floor size] "
+    else:
+        reason_prefix = ""
+
+    reason = reason_prefix + (str(raw.get("reason", ""))[:200] or "no reason given")
     events = [str(e)[:120] for e in (raw.get("events") or [])][:6]
     return VetoDecision(action, mult, reason, events, model, True)
 
