@@ -143,25 +143,21 @@ def run() -> tuple[Check, dict]:
           + (f" ({facts.get('cost_curve_ratio')}x)." if m_atm else "."))
 
     # ---- 5. spreads widen through the session --------------------------------
-    by_under: dict[str, list[tuple[str, float]]] = defaultdict(list)
-    for r in obs:
-        vals = [p["half_spread_pct"] for p in r.get("rows", [])
-                if (p.get("bid") or 0) > 0 and -1.0 <= p["moneyness_pct"] <= 0.0]
-        med = _median(vals)
-        if med:
-            by_under[r["underlying"]].append((r["ts"], med))
-    widened = None
-    if by_under.get("SPY") and len(by_under["SPY"]) > 2:
-        series = sorted(by_under["SPY"])
-        first, last = series[0][1], series[-1][1]
-        widened = round(last / first, 2) if first else None
-        facts["widening_vs_open"] = widened
-        facts["observations"] = len(series)
+    # Uses the same function the dashboard uses. Computing it a second time
+    # here is how the page and the verifier came to disagree about the same
+    # journal, which is the failure this whole project argues against.
+    from . import observe
+    rep = observe.widening_report().get("SPY") or {}
+    latest = rep.get("latest_widening") or {}
+    widened = latest.get("-1.0:0.0")
+    facts["widening_vs_open"] = widened
+    facts["observations"] = rep.get("observations", 0)
+    facts["widening_expiry"] = rep.get("expiry")
     c.add(widened is not None,
           "The same strikes were re-quoted through the session and the spread was tracked.",
-          f"{facts.get('observations', 0)} SPY observations; near-the-money half-spread "
-          f"ended at {widened}x its first reading."
-          if widened else "Not enough observations recorded yet.")
+          f"{facts['observations']} SPY observations on the {rep.get('expiry')} expiry; "
+          f"near-the-money half-spread ended at {widened}x its first reading."
+          if widened else "Not enough observations on a single expiry yet.")
 
     # ---- 6. refusals are recorded, not just fills ----------------------------
     refusals = count_refusals(records)

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-03T20:02:08+00:00",
+  "generated_at": "2026-09-03T20:02:51+00:00",
   "verification": {
     "passed": 10,
     "total": 10,
@@ -8,7 +8,7 @@
       {
         "ok": true,
         "claim": "The journal exists and is readable.",
-        "evidence": "7033 records across 1 file(s)."
+        "evidence": "7036 records across 1 file(s)."
       },
       {
         "ok": true,
@@ -33,7 +33,7 @@
       {
         "ok": true,
         "claim": "The same strikes were re-quoted through the session and the spread was tracked.",
-        "evidence": "109 SPY observations; near-the-money half-spread ended at 0.96x its first reading."
+        "evidence": "89 SPY observations on the 2026-09-03 expiry; near-the-money half-spread ended at 4.143x its first reading."
       },
       {
         "ok": true,
@@ -57,7 +57,7 @@
       }
     ],
     "facts": {
-      "journal_records": 7033,
+      "journal_records": 7036,
       "orders": 3,
       "requoted": 3,
       "max_abs_drift": 7.0,
@@ -66,8 +66,9 @@
       "half_spread_atm_pct": 1.961,
       "half_spread_far_pct": 14.286,
       "cost_curve_ratio": 7.3,
-      "widening_vs_open": 0.96,
-      "observations": 109,
+      "widening_vs_open": 4.143,
+      "observations": 89,
+      "widening_expiry": "2026-09-03",
       "refusals": 37,
       "vetoes": 4,
       "settlements": 2,
@@ -188,7 +189,7 @@
     "emergency_closes": 0,
     "vetoes": 4,
     "refusals": 37,
-    "journal_records": 7030
+    "journal_records": 7033
   },
   "spread_story": {
     "symbol": "SPY 765 put",
