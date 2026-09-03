@@ -40,21 +40,25 @@ class OrderResult:
 def build_payload(ev: Evaluation, qty: int, limit_price: float | None = None) -> dict:
     """Put credit spread as an mleg package.
 
-    limit_price is the net credit as a positive number; Alpaca infers the
-    direction of the package from the legs.
+    Alpaca signs the mleg limit price from the package's point of view:
+    a POSITIVE limit is the maximum net DEBIT you will pay, a NEGATIVE limit
+    is the minimum net CREDIT you require. Verified on 2026-09-03: an order
+    sent at +0.16 filled at -0.12, i.e. it behaved as a debit ceiling and so
+    was effectively a market order, while -0.60 was accepted and correctly
+    rested unfilled. Credit spreads must therefore be submitted negative.
     """
     if qty < 1:
         raise ValueError("qty must be at least 1")
-    price = ev.credit_fill if limit_price is None else limit_price
-    if price <= 0:
-        raise ValueError(f"credit must be positive, got {price}")
+    credit = ev.credit_fill if limit_price is None else limit_price
+    if credit <= 0:
+        raise ValueError(f"credit must be positive, got {credit}")
 
     return {
         "order_class": "mleg",
         "qty": str(qty),
         "type": "limit",
         "time_in_force": "day",
-        "limit_price": f"{price:.2f}",
+        "limit_price": f"{-abs(credit):.2f}",
         "legs": [
             {
                 "symbol": ev.short_symbol,
@@ -98,6 +102,40 @@ def build_close_payload(ev: Evaluation, qty: int, limit_price: float) -> dict:
     }
 
 
+def requote(ev: Evaluation, profile: str) -> dict | None:
+    """Re-read both legs immediately before submitting.
+
+    Scanning the whole universe takes time, and at the open the market moves
+    inside that window. Pricing off a stale scan is itself an execution cost,
+    so the limit is set from quotes taken seconds before the order goes out
+    and the difference is journalled as decision-to-execution slippage.
+    """
+    try:
+        payload = cli.run(
+            "data", "option", "snapshot",
+            "--symbols", f"{ev.short_symbol},{ev.long_symbol}",
+            "--feed", config.OPTION_FEED, profile=profile, journal_kind=None,
+        )
+    except Exception:
+        return None
+    snaps = (payload or {}).get("snapshots") or {}
+    s = (snaps.get(ev.short_symbol) or {}).get("latestQuote") or {}
+    l = (snaps.get(ev.long_symbol) or {}).get("latestQuote") or {}
+    s_bid, s_ask = float(s.get("bp") or 0), float(s.get("ap") or 0)
+    l_bid, l_ask = float(l.get("bp") or 0), float(l.get("ap") or 0)
+    if s_ask <= 0 or l_ask <= 0:
+        return None
+    credit_now = s_bid - l_ask
+    credit_mid_now = ((s_bid + s_ask) / 2) - ((l_bid + l_ask) / 2)
+    return {
+        "credit_fill_now": round(credit_now, 4),
+        "credit_mid_now": round(credit_mid_now, 4),
+        "entry_cost_now": round((credit_mid_now - credit_now) * 100, 2),
+        "drift_vs_scan": round((credit_now - ev.credit_fill) * 100, 2),
+        "short_bid": s_bid, "short_ask": s_ask, "long_bid": l_bid, "long_ask": l_ask,
+    }
+
+
 def _post_order(payload: dict, profile: str) -> dict:
     body = json.dumps(payload, separators=(",", ":"))
     return cli.run(
@@ -121,7 +159,18 @@ def submit(
             "COMP requires an explicit arming token (CLAUDE.md R4). Refusing."
         )
 
-    payload = build_payload(ev, qty)
+    fresh = None if dry_run else requote(ev, profile)
+    if fresh is not None:
+        if fresh["credit_fill_now"] <= 0:
+            journal.write("order_abandoned", profile=profile,
+                          reason="re-quote shows no credit available",
+                          candidate=f"{ev.underlying} {ev.short_strike:g}/{ev.long_strike:g}",
+                          **fresh)
+            raise ExecutionRefused("re-quote shows no credit available; not submitting")
+        payload = build_payload(ev, qty, limit_price=fresh["credit_fill_now"])
+    else:
+        payload = build_payload(ev, qty)
+
     client_order_id = f"hs-{uuid.uuid4().hex[:16]}"
     payload["client_order_id"] = client_order_id
 
@@ -133,6 +182,7 @@ def submit(
         client_order_id=client_order_id,
         qty=qty,
         payload=payload,
+        requote=fresh,
         evaluation={
             "underlying": ev.underlying,
             "short": ev.short_symbol,

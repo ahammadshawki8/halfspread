@@ -50,18 +50,18 @@ SPREAD_WIDTHS = [1, 2, 3, 5]  # in SPY points; scaled per underlying
 
 # ---- risk -----------------------------------------------------------------
 ACCOUNT_EQUITY = 100_000.0
-MAX_LOSS_PER_POSITION = 1_000.0   # hard cap, dollars
-MAX_LOSS_PER_DAY = 2_500.0        # 2.5% of the account
-MAX_CONCURRENT_POSITIONS = 3
-MIN_NET_EV = 0.0                  # refuse anything not positive after cost
+MAX_LOSS_PER_POSITION = 700.0     # hard cap, dollars
+MAX_LOSS_PER_DAY = 1_400.0        # 1.4% of the account
+MAX_CONCURRENT_POSITIONS = 2
+MIN_NET_EV = 1.0                  # dollars per contract; refuse marginal edges
 
 # ---- candidate admissibility ---------------------------------------------
 # The short strike must be genuinely out of the money. Selling ITM premium
 # scores well on a naive EV screen but the "edge" is just mid-vs-model noise
 # on the least reliable quotes in the chain (see the 780/775 case, 5.1).
 REQUIRE_SHORT_OTM = True
-MIN_PROB_WIN = 0.70
-MIN_CREDIT_TO_WIDTH = 0.03
+MIN_PROB_WIN = 0.85
+MIN_CREDIT_TO_WIDTH = 0.05
 MAX_CREDIT_TO_WIDTH = 0.40
 MIN_MAX_LOSS = 100.0              # ignore trades too small to matter
 MIN_CREDIT_FILL = 0.05            # option points; below this the spread dominates
@@ -76,6 +76,13 @@ EXIT_WIDENING_MEASURED: dict[str, float] = {}
 
 # Assumed haircut of realised vol vs implied vol (the variance risk premium).
 # Conservative: we only claim a fraction of the documented premium.
+#
+# BE HONEST ABOUT THIS. Measured live on 2026-09-03, admitted candidates need
+# breakeven win rates of 83-97% against modelled P(win) of 73-92%. On a binary
+# max-profit/max-loss view almost every candidate is marginal. The positive net
+# EV the model reports comes from this haircut and from the continuous payoff
+# between the strikes - it is an assumption, not an observation. This is
+# Vilkov's finding reproducing in live quotes, and the write-up must say so.
 VRP_HAIRCUT = 0.12
 
 # ---- session --------------------------------------------------------------
