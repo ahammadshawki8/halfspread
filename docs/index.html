@@ -966,7 +966,7 @@ function renderBoundary(){
   ];
   boxes.forEach(b=>{
     const widest=Math.max(w12(b.t), ...b.s.map(w10), 74);
-    b.w=Math.round(widest+40); b.h=b.s.length?86:52;
+    b.w=Math.round(widest+40); b.h=b.s.length?(52+b.s.length*19):52;
   });
   const gaps=[130,120,120];
   const total=boxes.reduce((a,b)=>a+b.w,0)+gaps.reduce((a,g)=>a+g,0);
@@ -989,7 +989,7 @@ function renderBoundary(){
     g+=`<text x="${cx}" y="${firstY}" text-anchor="middle" fill="var(--ink)"
           font-family="var(--mono)" font-size="12.5">${b.t}</text>`;
     b.s.forEach((line,i)=>{
-      g+=`<text x="${cx}" y="${b.y+52+i*16}" text-anchor="middle" fill="var(--muted)"
+      g+=`<text x="${cx}" y="${b.y+52+i*19}" text-anchor="middle" fill="var(--muted)"
             font-family="var(--mono)" font-size="10.5">${line}</text>`;});
   });
 
@@ -1175,22 +1175,36 @@ function initTop(){
    One fade and rise per block, once, and never for anything already on screen
    at load. Motion that answers scrolling, not decoration on every card. */
 function initReveal(){
-  if(window.matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  const reduced=window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+  if(reduced) return;
   const targets=[...document.querySelectorAll(
     "section > h2, section > .lede, section > figure, section > .scroll, "+
     "section > .ledger, section > #methodlist, section > .refs, section > .stack, "+
     "section > .steps, section > .note, section > .controls, section > .result, .glance, .video")];
-  const fold=window.innerHeight;
-  const io=new IntersectionObserver((es,obs)=>{
-    es.forEach(e=>{ if(!e.isIntersecting) return;
-      e.target.classList.add("shown"); obs.unobserve(e.target); });
-  },{rootMargin:"0px 0px -8% 0px",threshold:.08});
+  const pending=new Set();
   targets.forEach((el,i)=>{
-    if(el.getBoundingClientRect().top < fold){ el.classList.add("shown"); return; }
+    if(el.getBoundingClientRect().top < window.innerHeight) return;  // already visible
     el.classList.add("reveal");
     el.style.transitionDelay=Math.min(i%4,3)*45+"ms";
-    io.observe(el);
+    pending.add(el);
   });
+  const show=el=>{ el.classList.add("shown"); pending.delete(el); };
+  // A sweep on scroll, not only an observer: jumping to an anchor skips every
+  // element in between, and an observer never fires for those.
+  const sweep=()=>{
+    if(!pending.size){ window.removeEventListener("scroll",onScroll); return; }
+    pending.forEach(el=>{
+      if(el.getBoundingClientRect().top < window.innerHeight - 40) show(el);
+    });
+  };
+  let ticking=false;
+  const onScroll=()=>{ if(ticking) return; ticking=true;
+    requestAnimationFrame(()=>{ sweep(); ticking=false; }); };
+  window.addEventListener("scroll",onScroll,{passive:true});
+  window.addEventListener("resize",onScroll,{passive:true});
+  sweep();
+  // Failsafe: whatever happens, nothing stays invisible.
+  setTimeout(()=>pending.forEach(show), 4000);
 }
 
 function spy(){
