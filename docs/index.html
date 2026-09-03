@@ -197,6 +197,22 @@ td.m{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13.5px}
 @media(max-width:640px){.glance div{border-right:none;border-bottom:1px solid var(--rule-soft)}}
 .cmp td:first-child{color:var(--muted);width:44%}
 .cmp td:last-child{color:var(--ink)}
+
+/* ---------- connect ---------- */
+.steps{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px 16px;align-items:start}
+.stepnum{font-family:var(--mono);font-size:12px;color:var(--muted);border:1px solid var(--rule);
+  border-radius:50%;width:26px;height:26px;display:grid;place-items:center;margin-top:9px}
+.steps h3{font-size:16.5px;font-weight:500;margin:8px 0 8px}
+.cmd{display:flex;align-items:center;gap:10px;border:1px solid var(--rule);border-radius:3px;
+  background:var(--card);padding:9px 10px 9px 13px;overflow-x:auto}
+.cmd code{font-family:var(--mono);font-size:12.5px;background:none;padding:0;white-space:nowrap;
+  color:var(--ink)}
+.copy{margin-left:auto;font-family:var(--mono);font-size:10.5px;padding:4px 9px;cursor:pointer;
+  border:1px solid var(--rule);background:transparent;color:var(--muted);border-radius:2px}
+.copy:hover{color:var(--ink);border-color:var(--muted)}
+.copy.done{color:var(--bid);border-color:var(--bid)}
+#boardtable tbody tr{cursor:pointer}
+#boardtable tbody tr:hover{background:var(--measure-wash)}
 footer{margin-top:74px;padding-top:22px;border-top:1px solid var(--ink);
   font-size:13.5px;color:var(--muted);line-height:1.65}
 .empty{color:var(--muted);font-family:var(--mono);font-size:13px;padding:26px 0}
@@ -220,6 +236,7 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
   <a href="#verify">Verification</a>
   <a href="#research">Research</a>
   <a href="#stack">Stack</a>
+  <a href="#connect">Connect it</a>
   <a href="#log">Decisions</a>
 </nav>
 
@@ -275,9 +292,8 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
 
   <section id="method">
     <h2>How one decision is made</h2>
-    <p class="lede">The same ten steps run every cycle. Deterministic arithmetic decides
-      strike, size, price and exit. A language model may shrink a position and may do
-      nothing else.</p>
+    <p class="lede">The same ten steps run every cycle, and every one of them is journalled,
+      including the ones that end without an order.</p>
     <div id="methodlist"></div>
   </section>
 
@@ -347,11 +363,60 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
 
   <section id="stack">
     <h2>The stack</h2>
-    <p class="lede">Standard library Python. The Alpaca CLI is the agent's hands and every
-      order is a recorded, replayable invocation. The MCP server is the window, and a proxy
-      enforces that it stays one.</p>
+    <p class="lede">Standard library Python, no dependencies, and nothing running on a server.
+      The Alpaca CLI is the agent's hands: every order is a recorded, replayable invocation.</p>
     <div class="stack" id="stackgrid"></div>
     <div class="note" id="feed"></div>
+  </section>
+
+  <section id="connect">
+    <h2>Point it at your own account</h2>
+    <p class="lede">The desk speaks MCP, so you can ask it questions in plain English from Claude
+      Desktop, Claude Code or Cursor, against your own Alpaca paper account. Your keys stay on your
+      machine and never touch anything of ours. Read-only is enforced by a proxy, not promised:
+      eleven of the thirty-five tools the upstream server exposes are stripped before your client
+      ever sees them.</p>
+
+    <div class="steps">
+      <div class="stepnum">1</div>
+      <div>
+        <h3>Get the code</h3>
+        <div class="cmd"><code>git clone https://github.com/ahammadshawki8/halfspread</code>
+          <button class="copy" type="button">copy</button></div>
+      </div>
+
+      <div class="stepnum">2</div>
+      <div>
+        <h3>Export your Alpaca paper keys</h3>
+        <div class="cmd"><code>export ALPACA_COMP_API_KEY=... ALPACA_COMP_SECRET_KEY=...</code>
+          <button class="copy" type="button">copy</button></div>
+        <p class="hint">Paper keys, from the Alpaca dashboard. Nothing is sent anywhere except
+          Alpaca.</p>
+      </div>
+
+      <div class="stepnum">3</div>
+      <div>
+        <h3>Add the server to your client</h3>
+        <div class="cmd"><code>claude mcp add halfspread -- python -m agent.mcp_readonly</code>
+          <button class="copy" type="button">copy</button></div>
+        <p class="hint">Cursor and Claude Desktop read the same shape from
+          <code>.mcp.json</code>, which ships in the repository.</p>
+      </div>
+
+      <div class="stepnum">4</div>
+      <div>
+        <h3>Ask it something</h3>
+        <p class="hint" style="margin-top:2px">"What is open on my paper account, and what would
+          it cost me to close it right now?" Then check what it refused to do:</p>
+        <div class="cmd"><code>python -m agent.mcp_readonly --audit</code>
+          <button class="copy" type="button">copy</button></div>
+      </div>
+    </div>
+
+    <p class="hint" style="margin-top:20px">Prefer not to connect anything? Everything above is
+      also available without an account: <code>python -m agent.scan --curve</code> prices the whole
+      chain read-only, and <code>python -m agent.verify</code> re-derives every number on this page
+      from the committed journal with no keys at all.</p>
   </section>
 
   <section id="log">
@@ -499,7 +564,7 @@ function renderRefs(){
 const STACK=[
  ["Trading API","Multi-leg orders, two-leg verticals and four-leg iron condors, every leg covered inside one order for level three."],
  ["Alpaca CLI","The agent's hands. Each broker action is an invocation recorded verbatim in the journal and replayable by hand."],
- ["MCP server","The window onto the desk, behind a proxy that strips every mutating tool. Eleven of thirty-five blocked, twenty-four reads allowed."],
+ ["MCP server","The window onto the desk. Point your own client at it from the section below."],
  ["Market Data API","Chains, snapshots, news, and the intraday bar history behind the measured breach distribution."],
  ["GitHub Actions","The runtime. A session runs unattended and commits its own journal back, so the audit trail is timestamped by git."],
  ["Groq, open weights","The bounded risk review. Reachable or not, the deterministic decision stands."],
@@ -525,7 +590,12 @@ function renderCurve(d){
       .map(([m,v])=>({m,hs:v.sort((x,y)=>x-y)[Math.floor(v.length/2)]})).sort((a,b)=>a.m-b.m);};
   const series=names.map(n=>({n,pts:binned(n)})).filter(x=>x.pts.length>1);
   if(!series.length){$("#curvechart").innerHTML='<div class="empty">Not enough two-sided quotes yet.</div>';return;}
-  const w=1000,h=330,pad={l:52,r:14,t:14,b:40},xs=[-5,1];
+  const w=1000,h=330,pad={l:52,r:14,t:14,b:40};
+  // Fit the axis to where there is actually a two-sided market. Fixing it at
+  // -5% left most of the plot as an empty shaded slab once the wings lost
+  // their bids, which reads as a broken chart rather than a finding.
+  const ms=series.flatMap(x=>x.pts.map(p=>p.m));
+  const xs=[Math.max(-5,Math.floor((Math.min(...ms)-0.3)*2)/2), 1];
   const all=series.flatMap(x=>x.pts.map(p=>p.hs));
   const ylo=Math.max(.3,Math.min(...all)*.8), yhi=Math.min(120,Math.max(...all)*1.3);
   const L=v=>Math.log10(Math.max(v,ylo));
@@ -536,16 +606,18 @@ function renderCurve(d){
   const nb=Math.max(...names.map(n=>cv[n].no_bid_from_pct==null?-99:cv[n].no_bid_from_pct));
   if(nb>-90&&nb>xs[0]) s+=`<rect x="${X(xs[0])}" y="${pad.t}" width="${Math.max(0,X(nb)-X(xs[0]))}"
     height="${h-pad.t-pad.b}" fill="var(--ask)" opacity=".07"/>
-    <text class="lb" x="${X(xs[0])+8}" y="${h-pad.b-9}">no bid, untradeable</text>`;
+    <text class="lb" x="${X(xs[0])+8}" y="${h-pad.b-9}">no bid, nothing to trade against</text>`;
   s+=`<line class="gl" x1="${X(0)}" y1="${pad.t}" x2="${X(0)}" y2="${h-pad.b}" stroke-dasharray="3 3"/>
-      <text class="lb" x="${X(0)+7}" y="${pad.t+11}">at the money</text>`;
+      <text class="lb" x="${X(0)-7}" y="${h-pad.b-9}" text-anchor="end">at the money</text>`;
   for(let i=0;i<=6;i++){const v=xs[0]+(xs[1]-xs[0])*i/6;
     s+=`<text class="ax" x="${X(v)}" y="${h-pad.b+17}" text-anchor="middle">${v.toFixed(1)}%</text>`;}
   series.forEach((x,i)=>{
     s+=`<path d="${x.pts.map((p,j)=>`${j?"L":"M"}${X(p.m).toFixed(1)},${Y(p.hs).toFixed(1)}`).join("")}"
       fill="none" stroke="${COL[x.n]||"var(--muted)"}" stroke-width="2" stroke-linejoin="round"/>`;
     x.pts.forEach(p=>s+=`<circle cx="${X(p.m).toFixed(1)}" cy="${Y(p.hs).toFixed(1)}" r="2.6" fill="${COL[x.n]||"var(--muted)"}"/>`);
-    s+=`<text class="lb" x="${pad.l+8}" y="${pad.t+13+i*16}" fill="${COL[x.n]}">${x.n}</text>`;});
+    const lx=w-pad.r-46;
+    s+=`<circle cx="${lx}" cy="${pad.t+9+i*16}" r="3.5" fill="${COL[x.n]||"var(--muted)"}"/>
+        <text class="lb" x="${lx+8}" y="${pad.t+13+i*16}" fill="${COL[x.n]}">${x.n}</text>`;});
   s+=`<text class="lb" x="${pad.l}" y="${h-5}">moneyness, negative is further out of the money</text></svg>`;
   $("#curvechart").innerHTML=s;
   const f=(d.verification&&d.verification.facts)||{};
@@ -574,7 +646,9 @@ function renderWidening(d){
   series.forEach((x,k)=>{
     s+=`<path d="${x.s.map((p,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(avg(p)).toFixed(1)}`).join("")}"
       fill="none" stroke="${COL[x.n]||"var(--muted)"}" stroke-width="2"/>`;
-    s+=`<text class="lb" x="${pad.l+8}" y="${pad.t+13+k*16}" fill="${COL[x.n]}">${x.n}</text>`;});
+    const lx=w-pad.r-46;
+    s+=`<circle cx="${lx}" cy="${pad.t+9+k*16}" r="3.5" fill="${COL[x.n]||"var(--muted)"}"/>
+        <text class="lb" x="${lx+8}" y="${pad.t+13+k*16}" fill="${COL[x.n]}">${x.n}</text>`;});
   s+=`<text class="lb" x="${pad.l}" y="${h-5}">session progress</text></svg>`;
   $("#widen").innerHTML=s;
   const spy=series.find(x=>x.n==="SPY")||series[0];
@@ -586,8 +660,10 @@ function renderWidening(d){
 function renderEmpirical(d){
   const rows=((d.empirical||{}).by_hour||[]).slice().sort((a,b)=>a.hour-b.hour);
   if(rows.length<2){$("#emp").innerHTML='<div class="empty">No history cached.</div>';return;}
-  const w=1000,h=300,pad={l:56,r:14,t:14,b:40};
-  const lo=Math.min(...rows.map(r=>r.p01))*1.12, hi=Math.max(...rows.map(r=>r.p95))*1.5;
+  const w=1000,h=300,pad={l:56,r:14,t:14,b:52};
+  // Extra headroom below the axis so the lowest tick cannot land on the first
+  // hour label, and extra below the floor so the tail line clears the axis.
+  const lo=Math.min(...rows.map(r=>r.p01))*1.3, hi=Math.max(...rows.map(r=>r.p95))*1.5;
   const X=i=>pad.l+(w-pad.l-pad.r)*(i/(rows.length-1));
   const Y=v=>pad.t+(h-pad.t-pad.b)*(1-(v-lo)/(hi-lo));
   const ticks=[];for(let i=0;i<=4;i++){const v=hi-(hi-lo)*i/4;ticks.push({v,y:Y(v)});}
@@ -601,10 +677,10 @@ function renderEmpirical(d){
       fill="none" stroke="var(--ask)" stroke-width="2.2"/>`;
   s+=`<path d="${rows.map((r,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(r.p50).toFixed(1)}`).join("")}"
       fill="none" stroke="var(--muted)" stroke-width="1.2"/>`;
-  rows.forEach((r,i)=>s+=`<text class="ax" x="${X(i)}" y="${h-pad.b+17}" text-anchor="middle">${r.hour}:00</text>`);
+  rows.forEach((r,i)=>s+=`<text class="ax" x="${X(i)}" y="${h-pad.b+20}" text-anchor="middle">${r.hour}:00</text>`);
   s+=`<text class="lb" x="${pad.l+8}" y="${pad.t+13}" fill="var(--ask)">worst 1 in 100 sessions</text>
       <text class="lb" x="${pad.l+8}" y="${pad.t+29}" fill="var(--bid)">middle 90 in 100</text>
-      <text class="lb" x="${pad.l}" y="${h-5}">hour of the trading day, Eastern</text></svg>`;
+      <text class="lb" x="${pad.l}" y="${h-4}">hour of the trading day, Eastern</text></svg>`;
   $("#emp").innerHTML=s;
   const f=rows[0],e=d.empirical;
   $("#empcap").textContent=`${e.sessions} SPY sessions since ${e.start}, ${e.bars} bars. At ${f.hour}:00 `+
@@ -872,6 +948,35 @@ function renderBoard(d){
     : `${rows.length} names measured at the same moment.`;
 }
 
+
+/* ---------------- small interactions ---------------- */
+function wireCopy(){
+  document.querySelectorAll(".copy").forEach(b=>{
+    b.addEventListener("click",()=>{
+      const code=b.parentElement.querySelector("code");
+      navigator.clipboard.writeText(code.textContent.trim()).then(()=>{
+        const was=b.textContent; b.textContent="copied"; b.classList.add("done");
+        setTimeout(()=>{b.textContent=was;b.classList.remove("done");},1400);
+      }).catch(()=>{b.textContent="select it";});
+    });
+  });
+}
+
+/* A row in the cost board loads that name into the pricing tool, so the two
+   sections are one thing rather than two lists of the same tickers. */
+function wireBoardToTool(){
+  document.querySelectorAll("#boardtable tbody tr").forEach(tr=>{
+    const name=(tr.cells[0]||{}).textContent.replace("traded","").trim();
+    tr.title="Price a trade on "+name;
+    tr.addEventListener("click",()=>{
+      const u=document.querySelector("#u");
+      if(!u||![...u.options].some(o=>o.value===name)) return;
+      u.value=name; u.dispatchEvent(new Event("change"));
+      document.getElementById("try").scrollIntoView({behavior:"smooth",block:"start"});
+    });
+  });
+}
+
 function spy(){
   const links=[...document.querySelectorAll("nav a")];
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;
@@ -889,7 +994,7 @@ fetch("data.json?t="+Date.now()).then(r=>r.json()).then(d=>{
   $("#feed").textContent=d.feed_note||"";
   renderGlance(d); renderLadder(d); tryInit(d); renderLedger(d); renderCurve(d);
   renderWidening(d); renderBoard(d); renderEmpirical(d); renderVerify(d); renderLog(d);
-  spy();
+  wireCopy(); wireBoardToTool(); spy();
 }).catch(e=>{
   $("#live").innerHTML='<span class="beat" style="background:var(--ask)"></span>data unavailable';
   $("#ledgergrid").innerHTML='<div class="empty">Could not load data.json: '+esc(e)+'</div>';

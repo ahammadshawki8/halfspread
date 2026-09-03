@@ -95,8 +95,14 @@ BANDS = [(-1.0, 0.0), (-2.0, -1.0), (-3.0, -2.0), (-5.0, -3.0)]
 
 def widening_report(underlying: str | None = None) -> dict:
     """Compare each observation's cost curve against the session's first,
-    per moneyness band. This is the exhibit."""
-    obs = [r for r in journal.read() if r.get("kind") == "observation"]
+    per moneyness band. This is the exhibit.
+
+    Restricted to the traded universe. The watchlist names sit at different
+    expiries, and putting them on one axis turns the exhibit into spaghetti
+    that also implies the wrong cause.
+    """
+    obs = [r for r in journal.read()
+           if r.get("kind") == "observation" and r.get("underlying") in config.UNIVERSE]
     if underlying:
         obs = [r for r in obs if r.get("underlying") == underlying]
     if not obs:
