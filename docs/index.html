@@ -61,8 +61,6 @@ main{min-width:0;padding-top:40px}
   display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap}
 .wordmark{font-family:var(--mono);font-weight:600;font-size:15px;letter-spacing:.24em}
 .status{font-family:var(--mono);font-size:11.5px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap}
-.beat{width:6px;height:6px;border-radius:50%;background:var(--bid);display:inline-block;
-  margin-right:6px;vertical-align:1px}
 
 h1{font-size:clamp(34px,5.6vw,62px);line-height:1.06;font-weight:400;letter-spacing:-.022em;
   margin:44px 0 0;max-width:17ch}
@@ -235,11 +233,6 @@ td.m{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13.5px}
   clip-path:polygon(0 0,50% 0,50% 100%,0 100%)}
 
 /* ---------- live pulse ---------- */
-.beat{position:relative}
-.beat::after{content:"";position:absolute;inset:-4px;border-radius:50%;
-  border:1px solid var(--bid);opacity:0;animation:ping 2.4s ease-out infinite}
-@keyframes ping{0%{transform:scale(.6);opacity:.85}70%{transform:scale(2.1);opacity:0}100%{opacity:0}}
-@media(prefers-reduced-motion:reduce){.beat::after{animation:none}}
 
 /* ---------- hero video ---------- */
 .video{margin:38px 0 0;max-width:660px}
@@ -262,6 +255,25 @@ td.m{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13.5px}
 .totop.on{opacity:1;pointer-events:auto;transform:none}
 .totop:hover{color:var(--ink);border-color:var(--muted)}
 @media(prefers-reduced-motion:reduce){.totop{transition:opacity .01s}}
+
+/* ---------- live badge, on the things that actually move ---------- */
+.live{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--bid);float:right;margin-left:14px}
+.live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--bid);
+  position:relative;box-shadow:0 0 0 0 var(--bid);animation:blip 2.2s ease-out infinite}
+h2 .live{float:none;margin:0 0 0 12px;vertical-align:2px}
+@keyframes blip{
+  0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--bid) 55%,transparent)}
+  70%{box-shadow:0 0 0 7px transparent}
+  100%{box-shadow:0 0 0 0 transparent}}
+@media(prefers-reduced-motion:reduce){.live::before{animation:none}}
+
+/* ---------- reveal on scroll ---------- */
+.reveal{opacity:0;transform:translateY(14px);
+  transition:opacity .55s cubic-bezier(.2,.6,.2,1),transform .55s cubic-bezier(.2,.6,.2,1)}
+.reveal.shown{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){
+  .reveal{opacity:1;transform:none;transition:none}}
 footer{margin-top:74px;padding-top:22px;border-top:1px solid var(--ink);
   font-size:13.5px;color:var(--muted);line-height:1.65}
 .empty{color:var(--muted);font-family:var(--mono);font-size:13px;padding:26px 0}
@@ -293,7 +305,7 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
   <div class="mast">
     <div class="wordmark"><svg class="logo" viewBox="0 0 34 22" aria-hidden="true"><rect x="1" y="3" width="3.4" height="16" rx="1.2" fill="var(--bid)"/><rect x="29.6" y="3" width="3.4" height="16" rx="1.2" fill="var(--ask)"/><rect x="7" y="10" width="20" height="2.4" rx="1.2" fill="var(--measure)"/><rect x="7" y="6" width="1.6" height="10" rx=".8" fill="var(--measure)" opacity=".55"/><rect x="25.4" y="6" width="1.6" height="10" rx=".8" fill="var(--measure)" opacity=".55"/></svg><span>HALFSPREAD</span></div>
     <div class="status">
-      <span id="live"><span class="beat"></span>loading</span>
+      <span id="live">loading</span>
       <span>Alpaca paper <span class="num" id="acct"></span></span>
       <span>equity <span class="num" id="eq"></span></span>
       <span id="gen"></span>
@@ -326,7 +338,7 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
     <div class="glance" id="glance"></div>
 
     <div class="ladder">
-      <h2 style="font-size:19px" id="ladtitle">One contract, quoted twice</h2>
+      <h2 style="font-size:19px" id="ladtitle"><span class="live">live</span>One contract, quoted twice</h2>
       <p class="hint" id="ladsub">Waiting for quotes.</p>
       <div id="ladder"></div>
       <div class="verdict" id="ladverdict"></div>
@@ -384,7 +396,7 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
     <p class="lede">Half the bid-ask, as a share of the option's mid price. The strike a
       delta screen reaches for is the expensive one. Log scale, because the cost spans
       nearly two decades.</p>
-    <figure><div id="curvechart"></div><figcaption id="curvecap"></figcaption></figure>
+    <figure><span class="live">live</span><div id="curvechart"></div><figcaption id="curvecap"></figcaption></figure>
   </section>
 
   <section id="widening">
@@ -392,7 +404,7 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
     <p class="lede">Entry and exit spreads are identical at any single instant, so the cost
       of leaving is a statement about when you leave. These are the same strikes re-quoted
       through the session.</p>
-    <figure><div id="widen"></div><figcaption id="widencap"></figcaption></figure>
+    <figure><span class="live">live</span><div id="widen"></div><figcaption id="widencap"></figcaption></figure>
   </section>
 
   <section id="board">
@@ -400,7 +412,7 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
     <p class="lede">Every name this desk watches, measured at the same moment and sorted by cost.
       The hours column is the whole explanation: this is not a story about index options being
       worse than single names, it is a story about proximity to expiry.</p>
-    <div class="scroll"><table id="boardtable"></table></div>
+    <div class="scroll"><span class="live">live</span><table id="boardtable"></table></div>
     <p class="hint" id="boardnote"></p>
   </section>
 
@@ -939,41 +951,78 @@ function renderGlance(d){
 
 /* ---------------- where the model sits ---------------- */
 function renderBoundary(){
-  const w=1000,h=250;
-  const box=(x,y,bw,bh,label,sub,stroke,dash)=>
-    `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="none"
-       stroke="${stroke}" stroke-width="1.5"${dash?' stroke-dasharray="4 3"':''}/>
-     <text class="lb" x="${x+bw/2}" y="${y+(sub?bh/2-7:bh/2+4)}" text-anchor="middle"
-       fill="var(--ink)" style="font-size:12.5px">${label}</text>
-     ${sub?`<text class="lb" x="${x+bw/2}" y="${y+bh/2+13}" text-anchor="middle"
-       style="font-size:10.5px">${sub}</text>`:""}`;
-  const arrow=(x1,y1,x2,y2,label,col)=>
-    `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="1.5"
-       marker-end="url(#ah)"/>
-     ${label?`<text class="lb" x="${(x1+x2)/2}" y="${y1-8}" text-anchor="middle">${label}</text>`:""}`;
-  let s=`<svg viewBox="0 0 ${w} ${h}" role="img"
-    aria-label="The language model can only reduce position size; everything else is deterministic">
+  /* Laid out from measured text widths rather than guessed offsets. The
+     previous version put arrow labels on top of box edges and ran a dashed
+     line straight through its own annotations. Monospace at these sizes is
+     about 0.60 em per character, which is enough to size a box from its
+     longest line. */
+  const W=1000,H=430,CH=.61;
+  const w12=t=>t.length*12.5*CH, w10=t=>t.length*10.5*CH;
+  const boxes=[
+    {k:"det",  t:"Deterministic engine", s:["strike, width, size","price, exit"]},
+    {k:"ai",   t:"AI event review",      s:["reads live headlines"], accent:true},
+    {k:"size", t:"Size",                 s:["scaled down","or unchanged"]},
+    {k:"ord",  t:"Order",                s:[]},
+  ];
+  boxes.forEach(b=>{
+    const widest=Math.max(w12(b.t), ...b.s.map(w10), 74);
+    b.w=Math.round(widest+40); b.h=b.s.length?86:52;
+  });
+  const gaps=[130,120,120];
+  const total=boxes.reduce((a,b)=>a+b.w,0)+gaps.reduce((a,g)=>a+g,0);
+  let x=Math.max(14,(W-total)/2);
+  const midY=118;
+  boxes.forEach((b,i)=>{ b.x=x; b.y=midY-b.h/2; x+=b.w+(gaps[i]||0); });
+  const by=k=>boxes.find(b=>b.k===k);
+
+  let g=`<svg viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="The language model can only reduce position size; every other decision is deterministic">
     <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6"
       orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>`;
-  s+=box(20,86,250,62,"Deterministic engine","strike, width, size, price, exit","var(--ink)");
-  s+=arrow(270,117,352,117,"proposed position","var(--muted)");
-  s+=box(352,86,206,62,"AI event review","reads live headlines","var(--measure)");
-  s+=arrow(558,117,660,117,"","var(--muted)");
-  s+=`<text class="lb" x="609" y="109" text-anchor="middle" fill="var(--measure)">clamped in code</text>`;
-  s+=box(660,86,150,62,"Size","scaled down, or unchanged","var(--ink)");
-  s+=arrow(810,117,900,117,"","var(--muted)");
-  s+=box(900,96,80,42,"Order","","var(--ink)");
-  const blocked=[["cannot enlarge a position",34],["cannot choose a strike",56],
-                 ["cannot overrule a gate",78]];
-  blocked.forEach(([t,y])=>{
-    s+=`<line x1="455" y1="86" x2="455" y2="${y+6}" stroke="var(--ask)" stroke-width="1"
-         stroke-dasharray="3 3"/>
-        <text class="lb" x="470" y="${y+9}" fill="var(--ask)">${t}</text>`;
+
+  boxes.forEach(b=>{
+    const stroke=b.accent?"var(--measure)":"var(--ink)";
+    g+=`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="3" fill="none"
+          stroke="${stroke}" stroke-width="1.5"/>`;
+    const cx=b.x+b.w/2;
+    const firstY = b.s.length ? b.y+30 : b.y+b.h/2+4.5;
+    g+=`<text x="${cx}" y="${firstY}" text-anchor="middle" fill="var(--ink)"
+          font-family="var(--mono)" font-size="12.5">${b.t}</text>`;
+    b.s.forEach((line,i)=>{
+      g+=`<text x="${cx}" y="${b.y+52+i*16}" text-anchor="middle" fill="var(--muted)"
+            font-family="var(--mono)" font-size="10.5">${line}</text>`;});
   });
-  s+=`<line x1="455" y1="148" x2="455" y2="196" stroke="var(--bid)" stroke-width="1" stroke-dasharray="3 3"/>
-      <text class="lb" x="470" y="200" fill="var(--bid)">unreachable, and the deterministic decision stands</text>`;
-  s+=`</svg>`;
-  $("#boundary").innerHTML=s;
+
+  // Arrows between boxes, labels sitting clear ABOVE the line.
+  const link=(a,b,label)=>{
+    const x1=a.x+a.w, x2=b.x;
+    let out=`<line x1="${x1+6}" y1="${midY}" x2="${x2-8}" y2="${midY}"
+      stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ah)"/>`;
+    if(label) out+=`<text x="${(x1+x2)/2}" y="${midY-13}" text-anchor="middle"
+      fill="var(--ink-2)" font-family="var(--mono)" font-size="10.5">${label}</text>`;
+    return out;
+  };
+  g+=link(by("det"),by("ai"),"proposed");
+  g+=link(by("ai"),by("size"),"clamped in code");
+  g+=link(by("size"),by("ord"),"");
+
+  // The limits hang below the model, on their own, with nothing crossing them.
+  const ai=by("ai"), listY=midY+ai.h/2+46, lx=ai.x+ai.w/2;
+  g+=`<line x1="${lx}" y1="${midY+ai.h/2+4}" x2="${lx}" y2="${listY-22}"
+        stroke="var(--ask)" stroke-width="1" stroke-dasharray="3 3"/>`;
+  g+=`<text x="${lx}" y="${listY-8}" text-anchor="middle" fill="var(--ask)"
+        font-family="var(--mono)" font-size="11">the model cannot</text>`;
+  ["enlarge a position","choose a strike","overrule a gate"].forEach((t,i)=>{
+    g+=`<text x="${lx}" y="${listY+14+i*19}" text-anchor="middle" fill="var(--muted)"
+          font-family="var(--mono)" font-size="11">${t}</text>`;});
+
+  const failY=listY+14+3*19+26;
+  g+=`<line x1="${W*0.16}" y1="${failY-16}" x2="${W*0.84}" y2="${failY-16}"
+        stroke="var(--rule)" stroke-width="1"/>`;
+  g+=`<text x="${W/2}" y="${failY+3}" text-anchor="middle" fill="var(--bid)"
+        font-family="var(--mono)" font-size="11">if it is unreachable, the deterministic decision stands</text>`;
+  g+=`</svg>`;
+  $("#boundary").innerHTML=g;
 }
 
 const DIFF=[
@@ -1121,6 +1170,29 @@ function initTop(){
     behavior:window.matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"}));
 }
 
+
+/* ---------------- reveal on scroll ----------------
+   One fade and rise per block, once, and never for anything already on screen
+   at load. Motion that answers scrolling, not decoration on every card. */
+function initReveal(){
+  if(window.matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  const targets=[...document.querySelectorAll(
+    "section > h2, section > .lede, section > figure, section > .scroll, "+
+    "section > .ledger, section > #methodlist, section > .refs, section > .stack, "+
+    "section > .steps, section > .note, section > .controls, section > .result, .glance, .video")];
+  const fold=window.innerHeight;
+  const io=new IntersectionObserver((es,obs)=>{
+    es.forEach(e=>{ if(!e.isIntersecting) return;
+      e.target.classList.add("shown"); obs.unobserve(e.target); });
+  },{rootMargin:"0px 0px -8% 0px",threshold:.08});
+  targets.forEach((el,i)=>{
+    if(el.getBoundingClientRect().top < fold){ el.classList.add("shown"); return; }
+    el.classList.add("reveal");
+    el.style.transitionDelay=Math.min(i%4,3)*45+"ms";
+    io.observe(el);
+  });
+}
+
 function spy(){
   const links=[...document.querySelectorAll("nav a")];
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;
@@ -1141,15 +1213,15 @@ fetch("data.json?t="+Date.now()).then(r=>r.json()).then(d=>{
   $("#acct").textContent=(d.account&&d.account.account_number)||"paper";
   $("#eq").textContent=(d.account&&d.account.equity)?money(d.account.equity):"";
   $("#gen").textContent=(d.generated_at||"").replace("T"," ").replace("+00:00"," UTC");
-  $("#live").innerHTML='<span class="beat"></span>'+((d.counts&&d.counts.journal_records)||0).toLocaleString()+" journal records";
+  $("#live").textContent=((d.counts&&d.counts.journal_records)||0).toLocaleString()+" journal records";
   $("#feed").textContent=d.feed_note||"";
   [["glance",renderGlance],["ladder",renderLadder],["tool",tryInit],["ledger",renderLedger],
    ["curve",renderCurve],["widening",renderWidening],["board",renderBoard],
    ["tails",renderEmpirical],["verify",renderVerify],["log",renderLog]]
     .forEach(([n,f])=>safely(n,()=>f(d)));
-  safely("wire",()=>{wireCopy();wireBoardToTool();spy();});
+  safely("wire",()=>{wireCopy();wireBoardToTool();spy();initReveal();});
 }).catch(e=>{
-  $("#live").innerHTML='<span class="beat" style="background:var(--ask)"></span>data unavailable';
+  $("#live").textContent="data unavailable";
   $("#ledgergrid").innerHTML='<div class="empty">Could not load data.json: '+esc(e)+'</div>';
 });
 </script>
