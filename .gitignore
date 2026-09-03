@@ -24,4 +24,6 @@ Thumbs.db
 *.log
 logs_*.txt
 .playwright-mcp/
-halfspread-dashboard.png
+# working screenshots, never project assets
+*.png
+!docs/**/*.png
