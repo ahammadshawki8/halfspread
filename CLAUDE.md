@@ -236,6 +236,22 @@ removed from the journal and a `journal_correction` entry appended in their plac
 a published lie. Any figure on that page must be reproducible from a broker call. When a number
 looks good, check it against the account before believing it.
 
+### 5.5 Exit policy: net-of-cost, not a distance trigger
+
+A fixed distance trigger is the wrong rule for a defined-risk spread. The loss is already
+capped, and by the time a short strike is threatened the exit spread has widened to several
+times entry cost — **measured at 3.92x on SPY this session** — so a trigger-happy close pays
+exactly the cost this agent exists to avoid, to escape a loss that was bounded from the start.
+
+`monitor.worth_closing()` asks instead: what does buying the package back cost **right now**,
+against the **expected terminal intrinsic** if we hold? Close only when the market is charging
+materially less than we expect to pay at settlement. Same net-of-cost test the entry uses,
+pointed the other way. A materiality margin of `max($25, 25% of the exit cost)` stops it
+churning on modelled edge inside the noise of our own vol estimate.
+
+Holding through a breach is journalled (`hold_through_breach`) with its arithmetic, so a
+decision **not** to act is as visible as one to act.
+
 ### Alpaca CLI command map
 ```
 alpaca profile login [--api-key]     # OAuth (paper-only) or API keys
