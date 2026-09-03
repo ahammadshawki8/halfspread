@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HALFSPREAD</title>
+<meta name="description" content="An autonomous options agent built on one finding: in short-dated options, the exit is where the money dies.">
+<style>
+:root{
+  --bg:#0b0d10; --panel:#12161b; --panel-2:#171c23; --line:#232a33;
+  --ink:#e6ebf2; --ink-dim:#93a1b3; --ink-faint:#5f6d7e;
+  --pos:#3ddc97; --neg:#ff6b6b; --warn:#ffb454; --accent:#5aa9ff;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Inter,sans-serif;
+}
+@media(prefers-color-scheme:light){
+  :root{--bg:#f6f7f9;--panel:#fff;--panel-2:#f0f2f5;--line:#dde2e8;
+        --ink:#101418;--ink-dim:#5a6472;--ink-faint:#8b96a5;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+     font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 80px}
+a{color:var(--accent)}
+
+header{padding:56px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.brand{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+h1{font-family:var(--mono);font-size:clamp(30px,5.5vw,46px);letter-spacing:-.03em;
+   margin:0;font-weight:650}
+.tag{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+     color:var(--ink-faint);border:1px solid var(--line);padding:3px 9px;border-radius:99px}
+.thesis{font-size:clamp(17px,2.4vw,21px);color:var(--ink-dim);margin:16px 0 0;max-width:64ch}
+.thesis b{color:var(--ink);font-weight:600}
+.meta{margin-top:22px;display:flex;gap:26px;flex-wrap:wrap;font-family:var(--mono);
+      font-size:12px;color:var(--ink-faint)}
+.meta span b{color:var(--ink-dim);font-weight:500}
+.dot{width:7px;height:7px;border-radius:99px;background:var(--pos);display:inline-block;
+     margin-right:6px;vertical-align:middle}
+
+h2{font-size:13px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;
+   color:var(--ink-faint);margin:44px 0 14px;font-weight:600}
+.sub{color:var(--ink-dim);margin:-6px 0 18px;max-width:74ch;font-size:14px}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.card .k{font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+         color:var(--ink-faint)}
+.card .v{font-family:var(--mono);font-size:29px;font-weight:600;letter-spacing:-.02em;
+         margin-top:8px;font-variant-numeric:tabular-nums}
+.card .n{font-size:12.5px;color:var(--ink-dim);margin-top:7px;line-height:1.45}
+.pos{color:var(--pos)} .neg{color:var(--neg)} .warn{color:var(--warn)}
+.hero{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px}
+figure{margin:0}
+figcaption{font-size:12.5px;color:var(--ink-dim);margin-top:12px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.gl{stroke:var(--line);stroke-width:1}
+.ax{fill:var(--ink-faint);font-family:var(--mono);font-size:10px}
+.lbl{fill:var(--ink-dim);font-family:var(--mono);font-size:11px}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
+   text-transform:uppercase;color:var(--ink-faint);font-weight:600;
+   padding:0 12px 9px 0;border-bottom:1px solid var(--line)}
+td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.pill{font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+      padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--ink-dim);
+      white-space:nowrap}
+.pill.trade{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.pill.settle{color:var(--pos);border-color:color-mix(in srgb,var(--pos) 45%,var(--line))}
+.pill.veto,.pill.emergency{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}
+.scroll{overflow-x:auto}
+.note{background:var(--panel-2);border:1px solid var(--line);border-left:3px solid var(--warn);
+      border-radius:8px;padding:14px 16px;font-size:13.5px;color:var(--ink-dim);margin-top:16px}
+footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--line);
+       font-size:12.5px;color:var(--ink-faint)}
+.empty{color:var(--ink-faint);font-family:var(--mono);font-size:13px;padding:22px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand">
+    <h1>HALFSPREAD</h1>
+    <span class="tag">Alpaca paper</span>
+    <span class="tag" id="live"><span class="dot"></span>loading</span>
+  </div>
+  <p class="thesis">In short-dated options, <b>the exit is where the money dies.</b>
+     This agent prices what execution costs before every order, and then never
+     pays that cost twice — it settles instead of closing.</p>
+  <div class="meta">
+    <span><b>account</b> <span id="acct">—</span></span>
+    <span><b>equity</b> <span id="eq">—</span></span>
+    <span><b>updated</b> <span id="gen">—</span></span>
+  </div>
+</header>
+
+<h2>The ledger</h2>
+<p class="sub">Every figure below is derived from the append-only journal in this repository.
+   The dashboard computes nothing of its own.</p>
+<div class="cards" id="ledger"></div>
+
+<h2>Why the exit is the expensive half</h2>
+<p class="sub">Half the bid-ask, as a percentage of the option's mid price, across moneyness.
+   Relative execution cost explodes as strikes go further out of the money — which is exactly
+   where a delta-targeting screen puts you.</p>
+<div class="panel"><figure>
+  <div id="curve"></div>
+  <figcaption id="curvecap"></figcaption>
+</figure></div>
+
+<h2>Widening through the session</h2>
+<p class="sub">Entry and exit spreads are identical at a single instant, so the claim is about
+   <em>time</em>. These are the same strikes re-quoted through the day, measured rather than assumed.</p>
+<div class="panel"><figure>
+  <div id="widen"></div>
+  <figcaption id="widencap"></figcaption>
+</figure></div>
+
+<h2>Decisions</h2>
+<p class="sub">Trades, refusals and vetoes in one stream. A refusal is a decision, so it is logged
+   with the same weight as a fill.</p>
+<div class="panel scroll"><table>
+  <thead><tr><th>Time</th><th>Type</th><th>What</th><th>Detail</th></tr></thead>
+  <tbody id="log"></tbody>
+</table></div>
+
+<div class="note" id="feed"></div>
+
+<footer>
+  <div><b>HALFSPREAD</b> — autonomous options agent on Alpaca paper trading.
+  Source and full journal: <a href="https://github.com/ahammadshawki8/halfspread">github.com/ahammadshawki8/halfspread</a></div>
+  <div style="margin-top:8px">Paper trading is a simulation. Hypothetical results do not represent
+  actual trading and do not guarantee future results. Nothing here is investment advice.</div>
+</footer>
+
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const money = n => (n<0?"-":"") + "$" + Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const sign = n => n>0?"pos":n<0?"neg":"";
+
+function card(k,v,n,cls,hero){
+  return `<div class="card ${hero?'hero':''}"><div class="k">${k}</div>
+          <div class="v ${cls||''}">${v}</div>${n?`<div class="n">${n}</div>`:''}</div>`;
+}
+
+function renderLedger(d){
+  const L=d.ledger||{}, A=d.account||{};
+  const pnl = A.pnl ?? L.realized_pnl ?? 0;
+  const avoided = L.exit_cost_avoided_by_settling || 0;
+  const adv = L.advantage_from_not_exiting || 0;
+  const wr = L.win_rate===null||L.win_rate===undefined ? "—" : (L.win_rate*100).toFixed(0)+"%";
+  $("#ledger").innerHTML =
+    card("Account P&L", money(pnl), `against $${(A.starting_equity||100000).toLocaleString()} start`, sign(pnl), true) +
+    card("Entry cost paid", money(L.entry_cost_paid||0), "measured before each order, not estimated after") +
+    card("Exit cost avoided", money(avoided), "by settling instead of closing", avoided>0?"pos":"") +
+    card("Exit cost paid", money(L.exit_cost_paid||0), "only when a short strike was breached", (L.exit_cost_paid||0)>0?"warn":"") +
+    card("If round-tripped", money(L.realized_pnl_if_round_tripped||0), `${adv>=0?"+":""}${money(adv)} advantage from not exiting`, sign(L.realized_pnl_if_round_tripped||0)) +
+    card("Resolved", `${L.positions_resolved||0}`, `${L.settled_at_expiry||0} settled · ${L.closed_early||0} closed early · win rate ${wr}`);
+}
+
+function axes(w,h,pad,xs,ys,xfmt,yfmt){
+  let g="";
+  for(let i=0;i<=4;i++){
+    const y=pad.t+(h-pad.t-pad.b)*i/4, v=ys[1]-(ys[1]-ys[0])*i/4;
+    g+=`<line class="gl" x1="${pad.l}" y1="${y}" x2="${w-pad.r}" y2="${y}"/>
+        <text class="ax" x="${pad.l-8}" y="${y+3}" text-anchor="end">${yfmt(v)}</text>`;
+  }
+  for(let i=0;i<=5;i++){
+    const x=pad.l+(w-pad.l-pad.r)*i/5, v=xs[0]+(xs[1]-xs[0])*i/5;
+    g+=`<text class="ax" x="${x}" y="${h-pad.b+16}" text-anchor="middle">${xfmt(v)}</text>`;
+  }
+  return g;
+}
+
+function renderCurve(d){
+  const curves=d.cost_curves||{};
+  const names=Object.keys(curves).filter(k=>(curves[k].points||[]).length>2);
+  if(!names.length){ $("#curve").innerHTML='<div class="empty">No observations recorded yet.</div>'; return; }
+  const w=1000,h=340,pad={l:52,r:16,t:16,b:34};
+  const all=names.flatMap(n=>curves[n].points);
+  const xs=[-5,1], ymax=Math.min(60,Math.max(12,Math.ceil(Math.max(...all.map(p=>p.hs))/5)*5)), ys=[0,ymax];
+  const X=v=>pad.l+(w-pad.l-pad.r)*((v-xs[0])/(xs[1]-xs[0]));
+  const Y=v=>pad.t+(h-pad.t-pad.b)*(1-Math.min(v,ymax)/ymax);
+  const colors={SPY:"var(--accent)",XSP:"var(--neg)",SPXW:"var(--warn)"};
+  let s=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Half-spread as a percentage of mid across moneyness">`;
+  s+=axes(w,h,pad,xs,ys,v=>v.toFixed(1)+"%",v=>v.toFixed(0)+"%");
+  s+=`<line class="gl" x1="${X(0)}" y1="${pad.t}" x2="${X(0)}" y2="${h-pad.b}" stroke-dasharray="3 3"/>
+      <text class="lbl" x="${X(0)+6}" y="${pad.t+12}">at the money</text>`;
+  names.forEach((n,i)=>{
+    const pts=curves[n].points.slice().sort((a,b)=>a.m-b.m);
+    const dpath=pts.map((p,j)=>`${j?"L":"M"}${X(p.m).toFixed(1)},${Y(p.hs).toFixed(1)}`).join("");
+    s+=`<path d="${dpath}" fill="none" stroke="${colors[n]||'var(--ink-dim)'}" stroke-width="2" stroke-linejoin="round"/>`;
+    s+=`<circle cx="${w-pad.r-100}" cy="${pad.t+8+i*17}" r="4" fill="${colors[n]||'var(--ink-dim)'}"/>
+        <text class="lbl" x="${w-pad.r-90}" y="${pad.t+12+i*17}">${n}</text>`;
+  });
+  s+=`<text class="lbl" x="${pad.l}" y="${h-2}">moneyness (negative = further out of the money) →</text></svg>`;
+  $("#curve").innerHTML=s;
+  const spy=curves.SPY?.points||[];
+  const atm=spy.filter(p=>p.m>-0.5).map(p=>p.hs), far=spy.filter(p=>p.m<-2&&p.m>-3.5).map(p=>p.hs);
+  const med=a=>a.length?a.slice().sort((x,y)=>x-y)[Math.floor(a.length/2)]:null;
+  const a=med(atm), f=med(far);
+  $("#curvecap").textContent = (a&&f)
+    ? `SPY: about ${a.toFixed(1)}% of mid at the money, rising to roughly ${f.toFixed(1)}% around 2–3% out of the money — a ${(f/a).toFixed(0)}× increase in relative cost for moving to the strike a delta screen would pick.`
+    : "Half the bid-ask as a percentage of the option's mid price.";
+}
+
+function renderWidening(d){
+  const W=d.widening||{}; const names=Object.keys(W);
+  const series=names.map(n=>({n,s:(W[n].series||[]).filter(p=>Object.keys(p.vs_open||{}).length)}))
+                    .filter(x=>x.s.length>1);
+  if(!series.length){
+    $("#widen").innerHTML='<div class="empty">Needs at least two observations in a session. Populates as the market trades.</div>';
+    $("#widencap").textContent=""; return;
+  }
+  const w=1000,h=300,pad={l:52,r:16,t:16,b:34};
+  const pts=series.flatMap(x=>x.s.map((p,i)=>({i,v:Math.max(...Object.values(p.vs_open))})));
+  const ymax=Math.max(2,Math.ceil(Math.max(...pts.map(p=>p.v))));
+  const n=Math.max(...series.map(x=>x.s.length))-1||1;
+  const X=i=>pad.l+(w-pad.l-pad.r)*(i/n), Y=v=>pad.t+(h-pad.t-pad.b)*(1-Math.min(v,ymax)/ymax);
+  const colors={SPY:"var(--accent)",XSP:"var(--neg)",SPXW:"var(--warn)"};
+  let s=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Spread widening versus the session open">`;
+  s+=axes(w,h,pad,[0,1],[0,ymax],()=>"",v=>v.toFixed(1)+"x");
+  s+=`<line class="gl" x1="${pad.l}" y1="${Y(1)}" x2="${w-pad.r}" y2="${Y(1)}" stroke-dasharray="3 3"/>
+      <text class="lbl" x="${pad.l+6}" y="${Y(1)-6}">no change vs open</text>`;
+  series.forEach((x,k)=>{
+    const dpath=x.s.map((p,i)=>{
+      const vals=Object.values(p.vs_open); const v=vals.reduce((a,b)=>a+b,0)/vals.length;
+      return `${i?"L":"M"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`;
+    }).join("");
+    s+=`<path d="${dpath}" fill="none" stroke="${colors[x.n]||'var(--ink-dim)'}" stroke-width="2"/>`;
+    s+=`<circle cx="${w-pad.r-100}" cy="${pad.t+8+k*17}" r="4" fill="${colors[x.n]||'var(--ink-dim)'}"/>
+        <text class="lbl" x="${w-pad.r-90}" y="${pad.t+12+k*17}">${x.n}</text>`;
+  });
+  s+=`<text class="lbl" x="${pad.l}" y="${h-2}">session progress →</text></svg>`;
+  $("#widen").innerHTML=s;
+  const last=series[0].s[series[0].s.length-1].vs_open;
+  const vals=Object.values(last);
+  $("#widencap").textContent=`${series[0].n}: spreads currently ${(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2)}x their level at the first observation of the session.`;
+}
+
+function renderLog(d){
+  const rows=(d.decisions||[]);
+  if(!rows.length){ $("#log").innerHTML='<tr><td colspan="4" class="empty">No decisions recorded yet.</td></tr>'; return; }
+  $("#log").innerHTML=rows.map(r=>`<tr>
+    <td class="mono">${(r.ts||"").slice(11,19)}</td>
+    <td><span class="pill ${r.type}">${r.type}</span></td>
+    <td class="mono">${r.what||""}</td>
+    <td>${(r.detail||"").replace(/</g,"&lt;")}</td></tr>`).join("");
+}
+
+fetch("data.json?t="+Date.now()).then(r=>r.json()).then(d=>{
+  $("#acct").textContent=d.account?.account_number||d.account_id?.slice(0,8)||"—";
+  $("#eq").textContent=d.account?.equity?money(d.account.equity):"—";
+  $("#gen").textContent=(d.generated_at||"").replace("T"," ").replace("+00:00"," UTC");
+  $("#live").innerHTML='<span class="dot"></span>'+(d.counts?.journal_records||0)+" journal records";
+  $("#feed").textContent=d.feed_note||"";
+  renderLedger(d); renderCurve(d); renderWidening(d); renderLog(d);
+}).catch(e=>{
+  $("#live").innerHTML='<span class="dot" style="background:var(--neg)"></span>data unavailable';
+  $("#ledger").innerHTML='<div class="empty">Could not load data.json — '+e+'</div>';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+name: trading session
+
+# The agent's runtime. A single job runs one session start to finish and
+# commits its own journal back, so the audit trail is written by the thing
+# being audited and timestamped by git rather than by the agent itself.
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: dev or comp
+        type: choice
+        options: [dev, comp]
+        default: dev
+      live:
+        description: place real paper orders
+        type: boolean
+        default: false
+      minutes:
+        description: wall-clock budget
+        default: "60"
+  schedule:
+    # 13:35 UTC = 09:35 ET, five minutes after the opening bell.
+    # GitHub cron can fire late or be skipped under load, so this is the
+    # unattended path, not the one relied on for a demonstrated session.
+    - cron: "35 13 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: trading-session
+  cancel-in-progress: false
+
+jobs:
+  session:
+    runs-on: ubuntu-latest
+    timeout-minutes: 400
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Alpaca CLI
+        run: |
+          set -euo pipefail
+          VERSION=0.0.14
+          mkdir -p bin
+          curl -sSL -o /tmp/cli.tar.gz \
+            "https://github.com/alpacahq/cli/releases/download/v${VERSION}/cli_${VERSION}_linux_amd64.tar.gz"
+          tar -xzf /tmp/cli.tar.gz -C bin alpaca
+          chmod +x bin/alpaca
+          bin/alpaca version
+
+      - name: Authenticate
+        env:
+          DEV_KEY: ${{ secrets.ALPACA_DEV_API_KEY }}
+          DEV_SECRET: ${{ secrets.ALPACA_DEV_SECRET_KEY }}
+          COMP_KEY: ${{ secrets.ALPACA_COMP_API_KEY }}
+          COMP_SECRET: ${{ secrets.ALPACA_COMP_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+          bin/alpaca profile login --api-key --paper --name dev \
+            --key "$DEV_KEY" --secret "$DEV_SECRET" >/dev/null
+          bin/alpaca profile login --api-key --paper --name comp \
+            --key "$COMP_KEY" --secret "$COMP_SECRET" >/dev/null
+          bin/alpaca profile switch dev >/dev/null
+          echo "profiles configured"
+
+      - name: Write .env
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          umask 077
+          printf 'GROQ_API_KEY=%s\n' "$GROQ_API_KEY" > .env
+
+      - name: Run session
+        env:
+          PYTHONIOENCODING: utf-8
+          PROFILE: ${{ inputs.profile || 'comp' }}
+          MINUTES: ${{ inputs.minutes || '360' }}
+          LIVE: ${{ inputs.live }}
+        run: |
+          set -uo pipefail
+          ARGS="--profile $PROFILE --minutes $MINUTES"
+          # The scheduled path trades COMP for real; manual runs opt in.
+          if [ "${LIVE}" = "true" ] || [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
+            ARGS="$ARGS --live"
+            if [ "$PROFILE" = "comp" ]; then
+              ARGS="$ARGS --arm ARM-COMP-I-MEAN-IT"
+            fi
+          fi
+          echo "session args: $ARGS"
+          python -m agent.session $ARGS
+
+      - name: Commit journal
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f .env
+          git config user.name  "ahammadshawki8"
+          git config user.email "ahammadshawki8@users.noreply.github.com"
+          git add -A data/journal || true
+          if git diff --cached --quiet; then
+            echo "no journal changes"
+          else
+            git commit -m "Session journal $(date -u +%Y-%m-%dT%H:%MZ)"
+            git pull --rebase --autostash origin main || true
+            git push origin HEAD:main
+          fi

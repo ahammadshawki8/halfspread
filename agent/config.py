@@ -5,8 +5,14 @@ import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-ALPACA_BIN = ROOT / "bin" / "alpaca.exe"
 JOURNAL_DIR = ROOT / "data" / "journal"
+
+# Windows locally, Linux in CI. An explicit override wins over both.
+_BIN_CANDIDATES = [
+    Path(os.environ["ALPACA_CLI"]) if os.environ.get("ALPACA_CLI") else None,
+    ROOT / "bin" / "alpaca.exe",
+    ROOT / "bin" / "alpaca",
+]
 
 # ---- accounts -------------------------------------------------------------
 # DEV: experimentation, test orders, anything goes.
@@ -78,12 +84,17 @@ MARKET_CLOSE_ET = "16:00"
 
 
 def alpaca_bin() -> str:
-    if not ALPACA_BIN.exists():
-        raise FileNotFoundError(
-            f"Alpaca CLI not found at {ALPACA_BIN}. "
-            "Download cli_<ver>_windows_amd64.zip from github.com/alpacahq/cli/releases."
-        )
-    return str(ALPACA_BIN)
+    for candidate in _BIN_CANDIDATES:
+        if candidate and candidate.exists():
+            return str(candidate)
+    import shutil
+    found = shutil.which("alpaca")
+    if found:
+        return found
+    raise FileNotFoundError(
+        "Alpaca CLI not found. Expected bin/alpaca(.exe), $ALPACA_CLI, or alpaca on PATH. "
+        "Releases: github.com/alpacahq/cli/releases"
+    )
 
 
 def load_env() -> dict[str, str]:
