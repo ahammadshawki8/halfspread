@@ -461,6 +461,25 @@ halfspread/
 - [ ] **First live COMP entry**
 - [ ] Confirm settlement and realized P&L
 
+### 5.7 Dashboard design language (do not drift from this)
+
+Institutional **research tearsheet**, not a trading terminal. Every rival will ship a dark
+terminal with rounded cards; this reads as a paper instead.
+
+- **Ground:** light paper `#F5F6F8`, white cards, hairline rules. No shadows, 3px radius max.
+  Dark mode is a token swap only.
+- **Type:** `Newsreader` for prose and headings, `IBM Plex Mono` for every figure and label.
+  Two families, both deliberate. Tabular numerals everywhere a number can change.
+- **Colour carries information, never decoration.** Jade = bid, rose = ask,
+  amber = a measured cost. Nothing else is coloured.
+- **Hero is the subject, not a headline about it.** A real contract the desk is short, quoted
+  at the open and again now, drawn as bid marker, ask marker and the gap between them. Each
+  row is normalised to **its own mid**, because on a shared absolute axis a one-cent gap on a
+  forty-cent option is two pixels wide and the comparison disappears.
+- **One motion moment only:** the gap animating open on load. `prefers-reduced-motion` honoured.
+- **Every id used by script must be unique.** A duplicate `curve` on both a section and its
+  chart div wiped the section heading and figcaption; the selector matched the section first.
+
 ### Tier 5 - Dashboard & deploy [done] CORE COMPLETE
 - [x] `publish.py` - derives the payload from the journal; the page computes nothing
 - [x] `docs/index.html` - ledger, cost curve, widening chart, decision log
