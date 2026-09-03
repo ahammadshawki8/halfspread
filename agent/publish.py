@@ -45,6 +45,25 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
     # ---- the ledger -------------------------------------------------------
     ledger = settle.report(profile)
 
+    # Entry cost is paid the moment an order fills, not when it settles, so
+    # draw it from the orders themselves. Reporting $0 until settlement would
+    # understate the one number this project exists to measure.
+    entry_paid = 0.0
+    for r in intents:
+        ev = r.get("evaluation") or {}
+        entry_paid += _f(ev.get("entry_cost")) * int(r.get("qty") or 0)
+    ledger["entry_cost_paid"] = round(entry_paid, 2)
+
+    # For positions still open, the exit spread is not yet avoided - it is at
+    # stake. Report what closing them right now would cost, from the most
+    # recent monitor reading, and label it as such on the page.
+    latest_close_cost: dict[str, float] = {}
+    for r in records:
+        if r.get("kind") == "monitor" and r.get("exit_cost_now") is not None:
+            latest_close_cost[f"{r.get('underlying')} {r.get('spread')}"] = _f(r["exit_cost_now"])
+    ledger["exit_cost_at_stake"] = round(sum(latest_close_cost.values()), 2)
+    ledger["open_positions_priced"] = len(latest_close_cost)
+
     # ---- cost curve: the most recent observation per underlying ----------
     curves: dict[str, dict] = {}
     for r in records:

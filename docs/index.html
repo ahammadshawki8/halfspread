@@ -178,8 +178,13 @@ function renderLedger(d){
            ? `mark-to-market with ${openNow} position${openNow>1?"s":""} still open — settles at expiry`
            : `against $${(A.starting_equity||100000).toLocaleString()} start`,
          sign(pnl), true) +
-    card("Entry cost paid", money(L.entry_cost_paid||0), "measured before each order, not estimated after") +
-    card("Exit cost avoided", money(avoided), "by settling instead of closing", avoided>0?"pos":"") +
+    card("Entry cost paid", money(L.entry_cost_paid||0),
+         "measured on every leg before the order was sent, not estimated afterwards") +
+    (openNow>0 && (L.exit_cost_at_stake||0)>0
+      ? card("Exit cost at stake", money(L.exit_cost_at_stake),
+             `what closing the ${L.open_positions_priced} open position${L.open_positions_priced>1?"s":""} would cost right now — avoided entirely by letting them settle`,
+             "warn")
+      : card("Exit cost avoided", money(avoided), "by settling instead of closing", avoided>0?"pos":"")) +
     card("Exit cost paid", money(L.exit_cost_paid||0), "only when a short strike was breached", (L.exit_cost_paid||0)>0?"warn":"") +
     card("If round-tripped", money(L.realized_pnl_if_round_tripped||0), `${adv>=0?"+":""}${money(adv)} advantage from not exiting`, sign(L.realized_pnl_if_round_tripped||0)) +
     card("Resolved", `${L.positions_resolved||0}`, `${L.settled_at_expiry||0} settled · ${L.closed_early||0} closed early · win rate ${wr}`);
