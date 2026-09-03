@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>HALFSPREAD - slides</title>
+<meta name="viewport" content="width=1280">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDEFF2; --card:#FFFFFF; --ink:#14181D; --ink2:#3C454F; --muted:#6E7883;
+  --rule:#D7DCE2; --hair:#E7EAEE;
+  --bid:#1B6B50; --ask:#A63446; --measure:#8F5B05; --flat:#8A929B;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--paper)}
+body{font-family:var(--serif);color:var(--ink);
+  font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;align-items:center;gap:22px;padding:22px 0}
+
+.slide{width:1280px;height:720px;background:var(--card);border:1px solid var(--rule);
+  border-radius:3px;padding:44px 56px 0;display:flex;flex-direction:column;overflow:hidden;position:relative}
+
+/* header */
+.sh{display:flex;align-items:baseline;gap:14px;padding-bottom:11px;border-bottom:1.5px solid var(--ink);flex:0 0 auto}
+.sh .mk{display:flex;align-items:center;gap:8px}
+.sh .mk span{font-family:var(--mono);font-size:12.5px;font-weight:600;letter-spacing:.22em}
+.sh .sec{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.11em;text-transform:uppercase}
+.sh .num{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+
+/* type */
+h1{font-size:62px;line-height:1.02;font-weight:400;letter-spacing:-.03em;max-width:19ch}
+h2{font-size:33px;line-height:1.1;font-weight:400;letter-spacing:-.022em;margin-top:24px;max-width:30ch}
+.lede{font-size:17px;line-height:1.5;color:var(--ink2);margin-top:11px;max-width:88ch}
+.body{flex:1;display:flex;flex-direction:column;min-height:0;padding-bottom:10px;justify-content:center}
+.sf{flex:0 0 auto;border-top:1px solid var(--hair);padding:13px 0 17px;
+  font-size:16.5px;line-height:1.35;color:var(--ink);max-width:104ch}
+.sf b{font-weight:600}
+.cite{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:7px;letter-spacing:.02em}
+
+/* generic bits */
+.mono{font-family:var(--mono)}
+.k{font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.big{font-family:var(--mono);font-size:38px;font-weight:600;letter-spacing:-.035em;line-height:1;white-space:nowrap}
+.bid{color:var(--bid)} .ask{color:var(--ask)} .meas{color:var(--measure)} .mut{color:var(--muted)}
+.grid{display:grid;gap:26px}
+.g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
+.stat .v{font-family:var(--mono);font-size:31px;font-weight:600;letter-spacing:-.03em;margin-top:6px;line-height:1;white-space:nowrap}
+.stat .n{font-size:13.5px;color:var(--muted);margin-top:6px;line-height:1.35}
+.rule{border-top:1px solid var(--hair);margin:18px 0}
+
+table{width:100%;border-collapse:collapse;font-family:var(--mono)}
+th{font-size:10.5px;color:var(--muted);letter-spacing:.09em;text-transform:uppercase;
+  text-align:left;font-weight:500;padding:0 10px 7px 0;border-bottom:1px solid var(--rule)}
+td{font-size:14px;padding:5.5px 10px 5.5px 0;border-bottom:1px solid var(--hair)}
+td.r,th.r{text-align:right;padding-right:14px}
+.bar div{height:8px;border-radius:1.5px}
+
+.cards{display:flex;gap:0;align-items:stretch}
+.card{flex:1;border-left:2px solid var(--rule);padding:2px 18px 2px 16px}
+.card:first-child{border-left:2px solid var(--ink)}
+.card h3{font-family:var(--mono);font-size:13.5px;font-weight:600;letter-spacing:.01em}
+.card p{font-size:14px;line-height:1.45;color:var(--ink2);margin-top:7px}
+
+ul.tick{list-style:none;margin-top:10px}
+ul.tick li{font-size:14.5px;line-height:1.45;padding-left:17px;position:relative;margin-top:7px;color:var(--ink2)}
+ul.tick li::before{content:"";position:absolute;left:0;top:9px;width:7px;height:1.5px;background:var(--measure)}
+ul.tick li b{color:var(--ink);font-weight:600}
+
+.flow{display:flex;align-items:stretch;gap:0;margin-top:4px}
+.step{flex:1;border:1px solid var(--rule);border-radius:2px;padding:11px 12px;margin-right:8px}
+.step:last-child{margin-right:0}
+.step .t{font-family:var(--mono);font-size:12px;font-weight:600}
+.step .d{font-size:12.5px;line-height:1.38;color:var(--muted);margin-top:5px}
+.step.gate{border-color:var(--measure);border-width:1.5px}
+.step.out{border-color:var(--bid);border-width:1.5px}
+
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:2.5px 8px;
+  border:1px solid var(--rule);border-radius:2px;color:var(--muted);margin-right:6px}
+.hl{background:#FBF6EA}
+
+.quote{font-size:19px;line-height:1.42;font-style:italic;color:var(--ink);
+  border-left:2px solid var(--measure);padding-left:18px;max-width:74ch}
+
+/* title slide */
+.title .body{justify-content:center}
+.tstat{display:flex;gap:0;margin-top:34px;border-top:1px solid var(--hair);padding-top:20px}
+.tstat>div{padding-right:40px;margin-right:40px;border-right:1px solid var(--hair);flex:0 0 auto}
+.tstat .k{white-space:nowrap}
+.tstat div:last-child{border:0}
+
+@media print{
+  html,body{background:#fff}
+  body{gap:0;padding:0}
+  .slide{border:0;border-radius:0;page-break-after:always;break-after:page}
+  @page{size:1280px 720px;margin:0}
+}
+</style></head><body>
+
+<!-- 01 -->
+<section class="slide title" id="s1">
+  <div class="sh"><div class="mk">
+    <svg width="30" height="19" viewBox="0 0 34 22" aria-hidden="true">
+      <rect x="1" y="3" width="3.4" height="16" rx="1.2" fill="#1B6B50"/>
+      <rect x="29.6" y="3" width="3.4" height="16" rx="1.2" fill="#A63446"/>
+      <rect x="7" y="10" width="20" height="2.4" rx="1.2" fill="#8F5B05"/>
+      <rect x="7" y="6" width="1.6" height="10" rx=".8" fill="#8F5B05" opacity=".55"/>
+      <rect x="25.4" y="6" width="1.6" height="10" rx=".8" fill="#8F5B05" opacity=".55"/></svg>
+    <span>HALFSPREAD</span></div>
+    <div class="sec">Alpaca AI Trading Agents Hackathon</div><div class="num">01 / 15</div></div>
+  <div class="body">
+    <h1>Every options agent reports what it made. None report what it paid.</h1>
+    <p class="lede" style="font-size:19px;max-width:72ch">An autonomous options agent on Alpaca paper trading that measures execution
+      cost before it places an order, and structures every position so it never pays that cost a second time.</p>
+    <div class="tstat">
+      <div><div class="k">a contract quoted at 15:34 ET</div>
+        <div style="margin-top:9px" class="mono"><span style="font-size:24px" class="bid">BID 0.00</span>
+        <span style="font-size:24px;margin-left:20px" class="ask">ASK 0.08</span></div>
+        <div class="n" style="font-size:13px;color:var(--muted);margin-top:8px">IWM put, 26 minutes to expiry.
+          It is worth four cents and unsellable.</div></div>
+      <div><div class="k">exit cost paid to date</div><div class="big bid" style="margin-top:9px">$0.00</div></div>
+      <div><div class="k">published claims reproducing</div><div class="big" style="margin-top:9px">10 / 10</div></div>
+    </div>
+  </div>
+  <div class="sf">Alpaca paper account <b class="mono">PA31RB6YR1V6</b>, opened at exactly $100,000 and never
+    traded by hand.<div class="cite">ahammadshawki8 · github.com/ahammadshawki8/halfspread · ahammadshawki8.github.io/halfspread</div></div>
+</section>
+
+<!-- 02 -->
+<section class="slide" id="s2">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">The problem</div><div class="num">02 / 15</div></div>
+  <div class="body">
+    <h2>The cost of leaving a trade is not a rounding error. Near expiry it is the trade.</h2>
+    <p class="lede">Half the bid-ask, as a share of what the contract is worth. Thirteen names quoted within the
+      same minute on our own broker feed. The only thing separating the two blocks is how long the contract has left to live.</p>
+    <table style="margin-top:16px">
+      <tr><th style="width:78px">Ticker</th><th style="width:118px">Time left</th><th class="r" style="width:96px">Half-spread</th><th>&nbsp;</th></tr>
+      <tr><td>NVDA</td><td class="mut">a day</td><td class="r bid">0.52%</td><td class="bar"><div style="width:0.5%;background:#1B6B50;opacity:.6"></div></td></tr>
+      <tr><td>TSLA</td><td class="mut">a day</td><td class="r bid">1.16%</td><td class="bar"><div style="width:1.2%;background:#1B6B50;opacity:.6"></div></td></tr>
+      <tr><td>AAPL</td><td class="mut">a day</td><td class="r bid">1.27%</td><td class="bar"><div style="width:1.3%;background:#1B6B50;opacity:.6"></div></td></tr>
+      <tr><td>MSFT</td><td class="mut">a day</td><td class="r bid">2.95%</td><td class="bar"><div style="width:3%;background:#1B6B50;opacity:.6"></div></td></tr>
+      <tr><td>GOOGL</td><td class="mut">a day</td><td class="r bid">4.97%</td><td class="bar"><div style="width:5%;background:#1B6B50;opacity:.6"></div></td></tr>
+      <tr class="hl"><td>SPXW</td><td class="mut">26 minutes</td><td class="r ask">10.20%</td><td class="bar"><div style="width:10.2%;background:#A63446;opacity:.65"></div></td></tr>
+      <tr class="hl"><td>SPY</td><td class="mut">26 minutes</td><td class="r ask">14.29%</td><td class="bar"><div style="width:14.3%;background:#A63446;opacity:.65"></div></td></tr>
+      <tr class="hl"><td>QQQ</td><td class="mut">26 minutes</td><td class="r ask">33.33%</td><td class="bar"><div style="width:33.3%;background:#A63446;opacity:.65"></div></td></tr>
+      <tr class="hl"><td>IWM</td><td class="mut">26 minutes</td><td class="r ask">100.00%</td><td class="bar"><div style="width:100%;background:#A63446;opacity:.65"></div></td></tr>
+    </table>
+  </div>
+  <div class="sf">A strategy screen that picks strikes on delta lands exactly where this curve is worst.
+    <b>Our agent picks on expected value after the measured cost instead.</b>
+    <div class="cite">Measured 3 Sep 2026 on the Alpaca indicative feed. These are the costs this account was
+      charged, not a claim about the true OPRA spread.</div></div>
+</section>
+
+<!-- 03 -->
+<section class="slide" id="s3">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">The problem</div><div class="num">03 / 15</div></div>
+  <div class="body">
+    <h2>Entry and exit cost the same at any one instant. So "the exit is expensive" is a claim about time.</h2>
+    <p class="lede">We re-quoted the same contracts every few minutes for a full session to test it. Below is a
+      position the desk actually held, priced at the opening bell and again near the close.</p>
+    <div class="grid g3" style="margin-top:22px">
+      <div class="stat"><div class="k">SPY 765 put, at the open</div><div class="v">1.235%</div>
+        <div class="n">bid 0.40 / ask 0.41, on a mid of 0.405</div></div>
+      <div class="stat"><div class="k">the same contract, 19:56 UTC</div><div class="v ask">2.857%</div>
+        <div class="n">bid 0.17 / ask 0.18, on a mid of 0.175</div></div>
+      <div class="stat"><div class="k">cost to leave, relative</div><div class="v meas">2.31x</div>
+        <div class="n">The gap held at a penny while the option decayed, so the same penny became twice the price.</div></div>
+    </div>
+    <div class="rule"></div>
+    <div class="cards">
+      <div class="card"><h3>Why it compounds</h3><p>Two forces push the same way: dealers widen quotes as gamma
+        risk rises into the close, and the contract itself decays. A fixed spread on a shrinking premium is a
+        rising percentage.</p></div>
+      <div class="card"><h3>Who pays it</h3><p>Every agent that opens a position in the morning and closes it in
+        the afternoon. That is the standard design, and it pays the widest spread of the day on the way out.</p></div>
+      <div class="card"><h3>The way out of it</h3><p>An out-of-the-money contract that reaches expiry is removed
+        at zero. No closing trade exists, so no spread is crossed and no commission is charged.</p></div>
+    </div>
+  </div>
+  <div class="sf">89 observations of this contract are in the journal, timestamped, and the chart on the live site
+    is drawn from them. <b>The exit is where the money dies, and it dies on a clock.</b></div>
+</section>
+
+<!-- 04 -->
+<section class="slide" id="s4">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">The solution</div><div class="num">04 / 15</div></div>
+  <div class="body">
+    <h2>Build the agent backwards from the cost, and the exit disappears.</h2>
+    <p class="lede">HALFSPREAD sells defined-risk option spreads and chooses strikes with one objective: that the
+      contracts expire worthless. The structure is ordinary. The selection criterion and the intent to hold are not.</p>
+    <div class="flow" style="margin-top:20px">
+      <div class="step"><div class="t">1 · Observe</div><div class="d">Chain, quotes and underlying across SPY,
+        XSP and SPXW every cycle</div></div>
+      <div class="step"><div class="t">2 · Price</div><div class="d">Own Black-Scholes, own greeks, own implied
+        volatility from the mid</div></div>
+      <div class="step gate"><div class="t">3 · Measure cost</div><div class="d">Half-spread per leg from live
+        quotes, before an order exists</div></div>
+      <div class="step gate"><div class="t">4 · Net EV</div><div class="d">Rank on value after that cost, not on
+        a delta target</div></div>
+      <div class="step gate"><div class="t">5 · Gate</div><div class="d">Win probability, loss caps, daily budget,
+        concurrency</div></div>
+      <div class="step out"><div class="t">6 · Settle</div><div class="d">Hold to expiry. No closing trade
+        to pay for</div></div>
+    </div>
+    <div class="rule"></div>
+    <div class="grid g4">
+      <div class="stat"><div class="k">candidates priced</div><div class="v">40,629</div><div class="n">across 235 scans</div></div>
+      <div class="stat"><div class="k">passed every gate</div><div class="v">958</div><div class="n">2.4% admitted</div></div>
+      <div class="stat"><div class="k">refusals journalled</div><div class="v">37</div><div class="n">each with its arithmetic</div></div>
+      <div class="stat"><div class="k">exit cost, by design</div><div class="v bid">$0.00</div><div class="n">settlement is not a trade</div></div>
+    </div>
+  </div>
+  <div class="sf">Both legs are covered inside a single Alpaca <b class="mono">mleg</b> order, so the loss is capped
+    before the position exists and there is no naked short anywhere in the book.</div>
+</section>
+
+<!-- 05 -->
+<section class="slide" id="s5">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">Research</div><div class="num">05 / 15</div></div>
+  <div class="body">
+    <h2>A leading 2026 study was corrected last month for exactly this error. Every result flipped.</h2>
+    <p class="lede">Vilkov's 0DTE trading-rules paper charged the bid-ask half-spread at one hundredth of its true
+      size, 0.022 basis points instead of 2.2. External replicators found it. The corrected net Sharpe ratios:</p>
+    <div class="grid g2" style="margin-top:16px;gap:40px">
+      <table>
+        <tr><th>Structure, near the money</th><th class="r">Before</th><th class="r">After</th></tr>
+        <tr><td>Put ratio spread</td><td class="r bid">+0.84</td><td class="r ask">-0.61</td></tr>
+        <tr><td>Risk reversal</td><td class="r bid">+0.44</td><td class="r">+0.10</td></tr>
+        <tr><td>Bear put spread</td><td class="r bid">+0.30</td><td class="r ask">-0.73</td></tr>
+        <tr><td>Strangle / straddle</td><td class="r ask">-0.51</td><td class="r ask">-0.97</td></tr>
+        <tr><td>Iron butterfly / condor</td><td class="r ask">-0.96</td><td class="r ask">-2.67</td></tr>
+        <tr><td>Top-3 conditional basket</td><td class="r bid">+0.82</td><td class="r ask">-0.82</td></tr>
+      </table>
+      <div>
+        <p class="quote">No strategy or basket retains a positive net Sharpe ratio.</p>
+        <div class="cite" style="margin-top:10px">The author's own conclusion, after the correction.</div>
+        <ul class="tick" style="margin-top:18px">
+          <li><b>We do not claim his numbers support us.</b> His structures are near the money and round-tripped
+            at 16:00. Ours are further out and held to settlement. Different regime, separate evidence.</li>
+          <li><b>We cite him for the cost finding,</b> which is the part that generalises: mis-price execution and
+            every conclusion downstream is wrong.</li>
+          <li>The annotated paper in that repository still shows pre-correction figures. Only the issues file is current.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="sf">Supporting evidence we do rely on: a 40-delta 7DTE bull put spread held to expiration ran an
+    <b>80% win rate from 2023 to mid-2026</b>, and Alpaca charges no commission on contracts that simply expire.
+    <div class="cite">SSRN 4641356 · KNOWN-ISSUES.md, github.com/vilkovgr/0dte-strategies · audit checklist from arXiv:2606.08285</div></div>
+</section>
+
+<!-- 06 -->
+<section class="slide" id="s6">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">The field</div><div class="num">06 / 15</div></div>
+  <div class="body">
+    <h2>We surveyed roughly ninety submissions before writing a line of code.</h2>
+    <p class="lede">Not to copy them. To find out which claims would be worth nothing by the time a judge reached
+      the ninetieth deck, and to make sure our differentiator was genuinely unoccupied.</p>
+    <div class="grid g2" style="margin-top:14px;gap:40px">
+      <table>
+        <tr><th>Territory</th><th class="r">Entries</th><th style="width:118px">Verdict</th></tr>
+        <tr><td>LLM proposes, gates decide</td><td class="r">~30</td><td class="ask">saturated</td></tr>
+        <tr><td>Credit spreads / premium selling</td><td class="r">~12</td><td class="ask">crowded</td></tr>
+        <tr><td>Multi-agent bull / bear debate</td><td class="r">~10</td><td class="ask">crowded</td></tr>
+        <tr><td>News and sentiment</td><td class="r">~8</td><td class="ask">crowded</td></tr>
+        <tr><td>Backtest-first research agents</td><td class="r">~5</td><td class="mut">occupied</td></tr>
+        <tr><td>Execution cost and slippage</td><td class="r">~4</td><td class="meas">contested</td></tr>
+        <tr><td>Dealer gamma, earnings crush, stat arb</td><td class="r">~5</td><td class="mut">occupied</td></tr>
+        <tr><td>Index options, cash settlement</td><td class="r">0</td><td class="bid">empty</td></tr>
+      </table>
+      <div>
+        <div class="k">Where we actually differ</div>
+        <ul class="tick">
+          <li><b>Exit-cost avoidance as the design principle,</b> not a cost model bolted onto a signal. One rival
+            states it closes every position before expiry, which is the literal anti-pattern.</li>
+          <li><b>The Vilkov correction.</b> A reversal of a leading paper, caused by precisely the error the field
+            is making. No other entry has it.</li>
+          <li><b>Index options and cash settlement</b> as the mechanism that makes a zero-cost exit possible.
+            Zero competitors touch them.</li>
+          <li><b>The CLI as the execution path.</b> Most entries used MCP or the raw SDK. Every order we place is a
+            replayable command.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="sf">The strategies that Vilkov's correction invalidated are the ones roughly a dozen entries here are
+    still running. <b>Being right about cost is not a nice detail. It decides whether the rest of the work counts.</b></div>
+</section>
+
+<!-- 07 -->
+<section class="slide" id="s7">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">Architecture</div><div class="num">07 / 15</div></div>
+  <div class="body">
+    <h2>A deterministic core, a narrow AI, and a journal that everything is derived from.</h2>
+    <div class="grid g3" style="margin-top:20px;gap:32px">
+      <div>
+        <div class="k">Decision layer</div>
+        <ul class="tick">
+          <li><b>pricing.py</b> Black-Scholes, implied volatility by bisection, greeks</li>
+          <li><b>chain.py</b> OCC parsing, chain fetch, put-call parity forward</li>
+          <li><b>cost.py</b> half-spread measurement, net EV, admissibility</li>
+          <li><b>strategy.py</b> candidate construction and ranking</li>
+          <li><b>risk.py</b> shortfall sizing, loss caps, concurrency</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">Runtime</div>
+        <ul class="tick">
+          <li><b>execute.py</b> mleg build, re-quote, submit through the CLI</li>
+          <li><b>monitor.py</b> net-of-cost exit test, emergency close</li>
+          <li><b>settle.py</b> expiry accounting and the counterfactual</li>
+          <li><b>llm.py</b> bounded event-risk review, clamped in code</li>
+          <li><b>session.py</b> one entrypoint, local or GitHub Actions</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">Evidence</div>
+        <ul class="tick">
+          <li><b>journal.py</b> append-only JSONL, fsynced, one line per decision including refusals</li>
+          <li><b>verify.py</b> re-derives every published claim with no key and no network</li>
+          <li><b>publish.py</b> builds the dashboard payload from the journal alone</li>
+          <li><b>mcp_readonly.py</b> stdio proxy that strips mutating tools</li>
+        </ul>
+      </div>
+    </div>
+    <div class="rule"></div>
+    <div class="cards">
+      <div class="card"><h3>Zero dependencies</h3><p>requirements.txt is empty. Standard library only, so a judge
+        can clone and run it with nothing installed.</p></div>
+      <div class="card"><h3>GitHub Actions is the runtime</h3><p>A scheduled job runs a session and commits its own
+        journal, so the audit trail is timestamped by git rather than by the agent.</p></div>
+      <div class="card"><h3>GitHub Pages is the front end</h3><p>The page computes nothing. It renders a payload
+        derived from the journal, so it cannot drift from the record.</p></div>
+      <div class="card"><h3>No card, no paid tier</h3><p>Free Alpaca data, free Groq inference, free hosting. Every
+        constraint in this project was solved without spending anything.</p></div>
+    </div>
+  </div>
+  <div class="sf">7,060 journal records so far. <b>The journal is the product; the dashboard is only a view of it.</b></div>
+</section>
+
+<!-- 08 -->
+<section class="slide" id="s8">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">Technology</div><div class="num">08 / 15</div></div>
+  <div class="body">
+    <h2>The free data feed gives no greeks and no spot price. So we compute the pricing layer ourselves.</h2>
+    <p class="lede">This began as a blocker and became the most defensible part of the build. Strike selection rests
+      on mathematics we own and can show, rather than on a vendor field we would have to trust.</p>
+    <div class="grid g3" style="margin-top:20px;gap:30px">
+      <div class="card" style="border-left-color:var(--measure)"><h3>Greeks are all zero</h3>
+        <p>Every contract at every expiry returns delta, gamma, theta and vega of exactly 0, with implied volatility
+          null. Not a market-hours artifact.</p>
+        <p style="margin-top:9px"><b class="mono bid">Solved:</b> implied volatility recovered from the mid by
+          bisection, then delta, gamma, theta and vega derived from it.</p></div>
+      <div class="card" style="border-left-color:var(--measure)"><h3>No spot for cash indices</h3>
+        <p>Alpaca publishes no underlying price for XSP or SPXW, so moneyness cannot be computed the obvious way.</p>
+        <p style="margin-top:9px"><b class="mono bid">Solved:</b> the forward is recovered from put-call parity on
+          the chain itself, using calls and puts at a shared strike.</p></div>
+      <div class="card" style="border-left-color:var(--measure)"><h3>Real markets are not lognormal</h3>
+        <p>Black-Scholes understates the left tail, which is precisely the tail a put seller is exposed to.</p>
+        <p style="margin-top:9px"><b class="mono bid">Solved:</b> breach frequency counted from 5,539 hourly bars
+          across 668 sessions, bucketed by hour. Sizing takes whichever estimate is worse.</p></div>
+    </div>
+    <div class="rule"></div>
+    <div class="grid g4">
+      <div class="stat"><div class="k">minimum win probability</div><div class="v">0.85</div></div>
+      <div class="stat"><div class="k">max loss per position</div><div class="v">$700</div></div>
+      <div class="stat"><div class="k">max loss per day</div><div class="v">$1,400</div></div>
+      <div class="stat"><div class="k">variance premium assumed</div><div class="v">12%</div></div>
+    </div>
+  </div>
+  <div class="sf">The last figure is the honest one: the variance risk premium haircut is <b>an assumption, not an
+    observation</b>, and it is where our modelled edge comes from. We say so on the site rather than burying it.</div>
+</section>
+
+<!-- 09 -->
+<section class="slide" id="s9">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">Risk</div><div class="num">09 / 15</div></div>
+  <div class="body">
+    <h2>Sized against the tail that actually happened, not the one the model prefers.</h2>
+    <p class="lede">Return-to-close distribution for SPY, measured by entry hour. A position opened at 09:30 faces a
+      materially wider tail than the same position opened at 14:00, and the agent sizes accordingly.</p>
+    <table style="margin-top:16px">
+      <tr><th style="width:130px">Entry hour, ET</th><th class="r" style="width:110px">1st pct</th>
+        <th class="r" style="width:110px">5th pct</th><th class="r" style="width:110px">Std dev</th>
+        <th class="r" style="width:90px">Sessions</th><th>Left tail to the close</th></tr>
+      <tr><td>09:30</td><td class="r ask">-1.98%</td><td class="r">-1.04%</td><td class="r">0.76%</td><td class="r mut">668</td>
+        <td class="bar"><div style="width:99%;background:#A63446;opacity:.55"></div></td></tr>
+      <tr><td>10:00</td><td class="r ask">-1.85%</td><td class="r">-0.85%</td><td class="r">0.70%</td><td class="r mut">668</td>
+        <td class="bar"><div style="width:93%;background:#A63446;opacity:.5"></div></td></tr>
+      <tr><td>11:00</td><td class="r ask">-1.54%</td><td class="r">-0.71%</td><td class="r">0.63%</td><td class="r mut">668</td>
+        <td class="bar"><div style="width:77%;background:#A63446;opacity:.45"></div></td></tr>
+      <tr><td>12:00</td><td class="r ask">-1.36%</td><td class="r">-0.63%</td><td class="r">0.55%</td><td class="r mut">668</td>
+        <td class="bar"><div style="width:68%;background:#A63446;opacity:.4"></div></td></tr>
+      <tr><td>13:00</td><td class="r ask">-1.16%</td><td class="r">-0.56%</td><td class="r">0.39%</td><td class="r mut">662</td>
+        <td class="bar"><div style="width:58%;background:#A63446;opacity:.35"></div></td></tr>
+      <tr><td>14:00</td><td class="r ask">-0.94%</td><td class="r">-0.46%</td><td class="r">0.32%</td><td class="r mut">662</td>
+        <td class="bar"><div style="width:47%;background:#A63446;opacity:.3"></div></td></tr>
+    </table>
+    <div class="rule" style="margin:16px 0 14px"></div>
+    <div class="cards">
+      <div class="card"><h3>The sizing rule</h3><p>Breach probability is computed two ways, from the model and from
+        this table. The agent always sizes on the worse of the two.</p></div>
+      <div class="card"><h3>Defined risk, always</h3><p>Both legs covered in one order. Maximum loss is known before
+        submission and capped per position and per day.</p></div>
+      <div class="card"><h3>Survivability over headline</h3><p>Credit to width runs 5 to 9%, so a large dollar P&amp;L
+        would need 6 to 10% of the account at risk. We refuse that trade.</p></div>
+    </div>
+  </div>
+  <div class="sf">5,539 hourly bars since January 2024, recomputed from the broker's own history.
+    <b>An 80% win rate still loses one day in five, and the sizing assumes it will.</b></div>
+</section>
+
+<!-- 10 -->
+<section class="slide" id="s10">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">The AI</div><div class="num">10 / 15</div></div>
+  <div class="body">
+    <h2>There is a language model in here. It is allowed to do exactly one thing: make a position smaller.</h2>
+    <p class="lede">Roughly thirty entries in this hackathon pitch "the LLM proposes and risk gates decide". That
+      territory is saturated, and we think it is also the wrong shape. Our model has authority over one scalar.</p>
+    <div class="flow" style="margin-top:22px">
+      <div class="step out" style="flex:1.3"><div class="t">Deterministic engine</div>
+        <div class="d">Strike, width, size, limit price and exit are all arithmetic. Decided before the model is
+          consulted, and unchanged if it never answers.</div></div>
+      <div class="step gate"><div class="t">AI event review</div>
+        <div class="d">Reads live headlines through Alpaca's news API. Returns one number.</div></div>
+      <div class="step gate"><div class="t">Clamped in code</div>
+        <div class="d">Forced into the range 0 to 1. A model that asks to double gets truncated to no change.</div></div>
+      <div class="step out"><div class="t">Final size</div>
+        <div class="d">Scaled down, or unchanged. Never up.</div></div>
+    </div>
+    <div class="rule"></div>
+    <div class="grid g2" style="gap:40px">
+      <div><div class="k" style="color:var(--ask)">The model cannot</div>
+        <ul class="tick" style="margin-top:9px">
+          <li>Choose a strike, a width or an expiry</li>
+          <li>Enlarge a position by any amount</li>
+          <li>Overrule a risk gate or a loss cap</li>
+          <li>Abstain from trading entirely. A block is converted to a floor of 0.25 and logged as a conversion,
+            because refusing a capped-loss trade over tail risk is the wrong response to a bounded tail.</li>
+        </ul></div>
+      <div><div class="k" style="color:var(--bid)">What it earned its place doing</div>
+        <ul class="tick" style="margin-top:9px">
+          <li>On its first live session it pulled Strait of Hormuz attacks and a crude oil surge out of the
+            headlines and cut the position.</li>
+          <li>It independently flagged the payrolls print scheduled for the following morning.</li>
+          <li>Reading unstructured event risk off the wire is the one job in this pipeline a human is genuinely
+            worse at automating.</li>
+          <li>If Groq is unreachable, the deterministic decision stands and the desk keeps trading.</li>
+        </ul></div>
+    </div>
+  </div>
+  <div class="sf">Four vetoes are recorded in the journal with their reasoning and their resulting multiplier.
+    <b>Give the model less to do, and what it does can be trusted.</b></div>
+</section>
+
+<!-- 11 -->
+<section class="slide" id="s11">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">Alpaca integration</div><div class="num">11 / 15</div></div>
+  <div class="body">
+    <h2>The CLI is the agent's hands. MCP is the window. Read-only is enforced, not promised.</h2>
+    <div class="grid g2" style="margin-top:20px;gap:44px">
+      <div>
+        <div class="k">Execution, through the CLI</div>
+        <ul class="tick">
+          <li>Every broker action is a logged <b>alpaca</b> invocation, recorded verbatim in the journal and
+            replayable by hand from the command line.</li>
+          <li>Multi-leg orders go out as <b class="mono">order_class: mleg</b> with both legs covered inside the
+            same order, which is what makes them Level 3 legal with no naked short.</li>
+          <li><b>A finding worth the deck space:</b> Alpaca signs an mleg limit price from the package's point of
+            view. Positive is a maximum debit, negative is a minimum credit. A credit spread submitted positive
+            silently behaves as a market order. We proved it three ways and the sign is now forced in code.</li>
+          <li>Decision-to-execution drift measured at <b>$7 per contract</b> against a $1 bid-ask, so every order
+            re-reads both legs seconds before submission and journals the drift.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">Inspection, through MCP</div>
+        <ul class="tick">
+          <li>Alpaca's official MCP server, v3.4.7, wired into the project and verified over stdio.</li>
+          <li>The vendor's own toolset filter does not remove <b class="mono">place_option_order</b>, so a
+            configuration promise would have been worth nothing.</li>
+          <li>We wrote a stdio proxy that sits in front of it, strips mutating tools from the listing and refuses
+            them by name on call.</li>
+        </ul>
+        <div class="grid g2" style="margin-top:20px;gap:20px">
+          <div class="stat"><div class="k">tools blocked</div><div class="v ask">11</div>
+            <div class="n">orders, cancels, closes, exercises, account config</div></div>
+          <div class="stat"><div class="k">tools allowed</div><div class="v bid">24</div>
+            <div class="n">read-only account, positions, market data, news</div></div>
+        </div>
+        <p class="cite" style="margin-top:14px">Auditable in one command: python -m agent.mcp_readonly --audit</p>
+      </div>
+    </div>
+  </div>
+  <div class="sf">A judge can point their own MCP client at this repository and inspect the live account without
+    being able to move a single dollar. <b>The setup is documented in the README and on the site.</b></div>
+</section>
+
+<!-- 12 -->
+<section class="slide" id="s12">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">Exit policy</div><div class="num">12 / 15</div></div>
+  <div class="body">
+    <h2>Even the emergency exit is decided on net cost, never on a distance trigger.</h2>
+    <p class="lede">The obvious rule is to close when the underlying approaches the short strike. For a defined-risk
+      spread that rule is actively harmful, and it is worth explaining why, because it is where most agents lose money.</p>
+    <div class="grid g2" style="margin-top:18px;gap:44px">
+      <div>
+        <div class="k">Why the obvious rule is wrong</div>
+        <ul class="tick">
+          <li>The loss is <b>already capped</b> by the long leg. There is no tail to escape.</li>
+          <li>By the time a short strike is threatened, the exit spread has widened to several times entry cost.
+            We measured <b>3.92x on SPY in a single session</b>.</li>
+          <li>So the trigger pays the exact cost this agent exists to avoid, in order to escape a loss that was
+            bounded from the beginning.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">The test we use instead</div>
+        <p style="font-size:15px;line-height:1.5;color:var(--ink2);margin-top:9px">What does buying the package back
+          cost <b>right now</b>, against the expected terminal intrinsic if we simply hold? Close only when the market
+          is charging materially less than we expect to pay at settlement.</p>
+        <p style="font-size:15px;line-height:1.5;color:var(--ink2);margin-top:10px">Materiality is the greater of
+          <b class="mono">$25</b> or <b class="mono">25%</b> of the exit cost, which stops the desk churning on
+          modelled edge that sits inside the noise of our own volatility estimate.</p>
+        <p style="font-size:15px;line-height:1.5;color:var(--ink2);margin-top:10px">It is the same net-of-cost test
+          the entry uses, pointed the other way.</p>
+      </div>
+    </div>
+    <div class="rule"></div>
+    <div class="cards">
+      <div class="card"><h3>Holding is a decision too</h3><p>When the desk holds through a breach it writes a
+        hold_through_breach record with the full arithmetic, so a decision not to act is as visible as one to act.</p></div>
+      <div class="card"><h3>Emergency close still exists</h3><p>It is booked explicitly as a cost event rather than
+        hidden in the P&amp;L, so the ledger never flatters itself.</p></div>
+      <div class="card"><h3>Used so far</h3><p>Zero times. Every position resolved at settlement, which is what the
+        strategy is for.</p></div>
+    </div>
+  </div>
+  <div class="sf">Assignment risk on an ITM SPY finish is real and disclosed. <b>It only bites when the short strike
+    is already breached, which is the one case the arithmetic above is written to handle.</b></div>
+</section>
+
+<!-- 13 -->
+<section class="slide" id="s13">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">Results</div><div class="num">13 / 15</div></div>
+  <div class="body">
+    <h2>Two positions settled. The interesting number is not the profit.</h2>
+    <table style="margin-top:16px">
+      <tr><th>Position</th><th class="r">Contracts</th><th class="r">Credit</th><th class="r">Underlying at settlement</th>
+        <th class="r">Outcome</th><th class="r">Realised</th></tr>
+      <tr><td>SPY 765 / 763 put spread</td><td class="r">3</td><td class="r">$30.00</td><td class="r">773.23</td>
+        <td class="r bid">expired OTM</td><td class="r bid">+$39.00</td></tr>
+      <tr><td>XSP 767 / 764 put spread</td><td class="r">2</td><td class="r">$39.00</td><td class="r">774.78</td>
+        <td class="r bid">expired OTM</td><td class="r bid">+$32.00</td></tr>
+    </table>
+    <div class="grid g4" style="margin-top:26px">
+      <div class="stat"><div class="k">realised P&amp;L</div><div class="v bid">+$71.00</div>
+        <div class="n">2 of 2 positions won</div></div>
+      <div class="stat"><div class="k">entry cost paid</div><div class="v meas">$7.00</div>
+        <div class="n">measured before each order</div></div>
+      <div class="stat"><div class="k">exit cost paid</div><div class="v bid">$0.00</div>
+        <div class="n">no closing trade existed</div></div>
+      <div class="stat"><div class="k">if round-tripped instead</div><div class="v">+$61.00</div>
+        <div class="n">the same two trades, closed</div></div>
+    </div>
+    <div class="rule"></div>
+    <div class="cards">
+      <div class="card"><h3>The counterfactual is the result</h3><p>Not paying to exit was worth $10.00, or
+        <b>14% of the gain</b>, on two small positions in a single session. That ratio is the thesis, and it scales.</p></div>
+      <div class="card"><h3>Why the number is small</h3><p>Credit to width runs 5 to 9%. Sizing for survivability
+        caps a clean day near +0.1 to 0.3%. We did not crank risk to buy a headline.</p></div>
+      <div class="card"><h3>Disclosed, not smoothed</h3><p>Broker equity reads $100,032.65 because Alpaca clears
+        expiries overnight. The site shows both figures and explains the gap.</p></div>
+    </div>
+  </div>
+  <div class="sf">3 orders filled, $69.00 of credit received, 0 emergency closes, 1 position still open into Friday.
+    <b>A red account would poison every other criterion, so the posture is a high win-rate grind.</b></div>
+</section>
+
+<!-- 14 -->
+<section class="slide" id="s14">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">Verification</div><div class="num">14 / 15</div></div>
+  <div class="body">
+    <h2>Our dashboard once published $316 that never happened. Here is what we did about it.</h2>
+    <p class="lede">The ledger showed $316 realised across six settled positions while every contract still had six
+      hours to run. Two bugs: settlement compared only the expiry date, and journal records were not scoped by
+      account, so DEV experiments were being attributed to the competition account.</p>
+    <div class="grid g3" style="margin-top:18px;gap:30px">
+      <div class="card" style="border-left-color:var(--ask)"><h3>What we did not do</h3>
+        <p>Quietly delete the records and re-publish. That is the version nobody would have caught.</p></div>
+      <div class="card" style="border-left-color:var(--bid)"><h3>What we did</h3>
+        <p>Removed the eleven fabricated records and appended a journal_correction in their place, so the removal
+          is a permanent part of the audit trail rather than an absence in it.</p></div>
+      <div class="card" style="border-left-color:var(--bid)"><h3>What it produced</h3>
+        <p>A verifier that re-derives every published claim from the committed journal, and regression tests for
+          both bugs. Neither can reach production again without failing the build.</p></div>
+    </div>
+    <div class="rule"></div>
+    <div class="grid g4">
+      <div class="stat"><div class="k">claims re-derived</div><div class="v bid">10 / 10</div>
+        <div class="n">python -m agent.verify</div></div>
+      <div class="stat"><div class="k">tests, credential-free</div><div class="v">45</div>
+        <div class="n">runs on every push in CI</div></div>
+      <div class="stat"><div class="k">journal records</div><div class="v">7,060</div>
+        <div class="n">append-only, committed to git</div></div>
+      <div class="stat"><div class="k">needed to check us</div><div class="v">0</div>
+        <div class="n">no key, no account, no network</div></div>
+    </div>
+  </div>
+  <div class="sf">Every claim in this deck is in that verifier, and the exit code is non-zero if any of them stops
+    reproducing. <b>When a dashboard is generated from a journal, a journal bug is a published lie.</b>
+    <div class="cite">Audited against the 7-dimension reproducibility checklist in arXiv:2606.08285. Costs are
+      Alpaca indicative-feed costs, not OPRA, and we say so everywhere the figure appears.</div></div>
+</section>
+
+<!-- 15 -->
+<section class="slide" id="s15">
+  <div class="sh"><div class="mk"><span>HALFSPREAD</span></div><div class="sec">Try it</div><div class="num">15 / 15</div></div>
+  <div class="body">
+    <h2>Sixty seconds is enough to check everything above.</h2>
+    <div class="grid g2" style="margin-top:22px;gap:44px">
+      <div>
+        <div class="k">Three things worth doing, in order</div>
+        <ul class="tick">
+          <li><b>Open the site and price a trade.</b> The page ships the live chain, the gate thresholds and the
+            measured breach distribution, so you can invent a spread and the same engine that decides our orders
+            will tell you what it costs, what leaving would cost, and which gate rejects it. Most get rejected.
+            That is the point of it.</li>
+          <li><b>Run the verifier.</b> Clone the repo and run one command. It re-derives every number in this deck
+            from the committed journal with no key, no account and no network.</li>
+          <li><b>Point your MCP client at the account.</b> Setup is in the README. You will get 24 read-only tools
+            and be unable to move a dollar.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="k">Links</div>
+        <p class="mono" style="font-size:15px;line-height:2.0;margin-top:10px">
+          ahammadshawki8.github.io/halfspread<br>
+          github.com/ahammadshawki8/halfspread</p>
+        <div class="k" style="margin-top:20px">Competition account</div>
+        <p class="mono" style="font-size:14px;line-height:1.85;margin-top:8px">
+          PA31RB6YR1V6<br>
+          0509a308-f1ef-44e2-8e8b-8a6d0893f84b</p>
+        <div class="k" style="margin-top:20px">Built with</div>
+        <p style="font-size:14px;line-height:1.55;color:var(--ink2);margin-top:8px">Alpaca Trading API, Alpaca CLI,
+          Alpaca Market Data, Alpaca MCP Server, Python standard library, Groq, GitHub Actions, GitHub Pages.</p>
+      </div>
+    </div>
+    <div class="rule"></div>
+    <div class="quote" style="font-size:22px">Most agents will tell you what they made. This one can show you what it paid.</div>
+  </div>
+  <div class="sf">HALFSPREAD by ahammadshawki8, for the lablab.ai and Alpaca AI Trading Agents Hackathon, September 2026.</div>
+</section>
+
+<script>
+(function(){
+  var s=[].slice.call(document.querySelectorAll('.slide')),i=0;
+  function go(n){i=Math.max(0,Math.min(s.length-1,n));s[i].scrollIntoView({behavior:'smooth',block:'center'});}
+  addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(i+1);}
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();go(i-1);}
+    else if(e.key==='Home'){e.preventDefault();go(0);}
+    else if(e.key==='End'){e.preventDefault();go(s.length-1);}
+  });
+  var io=new IntersectionObserver(function(es){es.forEach(function(en){
+    if(en.isIntersecting)i=s.indexOf(en.target);});},{threshold:.5});
+  s.forEach(function(el){io.observe(el);});
+})();
+</script>
+</body></html>
