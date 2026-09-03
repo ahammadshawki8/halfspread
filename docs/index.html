@@ -203,55 +203,78 @@ function renderCurve(d){
   const curves=d.cost_curves||{};
   const names=Object.keys(curves).filter(k=>(curves[k].points||[]).length>2);
   if(!names.length){ $("#curve").innerHTML='<div class="empty">No observations recorded yet.</div>'; return; }
-  const w=1000,h=340,pad={l:52,r:16,t:16,b:34};
-  const all=names.flatMap(n=>curves[n].points);
-  const xs=[-5,1], ymax=Math.min(60,Math.max(12,Math.ceil(Math.max(...all.map(p=>p.hs))/5)*5)), ys=[0,ymax];
+
+  // Cost spans nearly two decades, from about 1% of mid at the money to tens of
+  // percent in the wings, so a linear axis flattens the whole story into a spike
+  // at one end. Log scale shows the shape. Bins are wide enough that each holds
+  // several strikes, and the median of each bin is plotted rather than the raw
+  // quotes, which are one-tick noisy on cheap contracts.
+  const BIN=0.5, MIN_PER_BIN=2;
+  const binned=n=>{
+    const b=new Map();
+    for(const p of curves[n].points){
+      if(!(p.hs>0)) continue;
+      const k=Math.round(p.m/BIN)*BIN;
+      if(!b.has(k)) b.set(k,[]);
+      b.get(k).push(p.hs);
+    }
+    return [...b.entries()]
+      .filter(([,v])=>v.length>=MIN_PER_BIN)
+      .map(([m,v])=>({m,hs:v.sort((x,y)=>x-y)[Math.floor(v.length/2)]}))
+      .sort((a,b)=>a.m-b.m);
+  };
+
+  const series=names.map(n=>({n,pts:binned(n)})).filter(x=>x.pts.length>1);
+  if(!series.length){ $("#curve").innerHTML='<div class="empty">Not enough two-sided quotes yet.</div>'; return; }
+
+  const w=1000,h=340,pad={l:56,r:16,t:16,b:38};
+  const xs=[-5,1];
+  const all=series.flatMap(x=>x.pts.map(p=>p.hs));
+  const ylo=Math.max(0.3,Math.min(...all)*0.8), yhi=Math.min(120,Math.max(...all)*1.25);
+  const L=v=>Math.log10(Math.max(v,ylo));
   const X=v=>pad.l+(w-pad.l-pad.r)*((v-xs[0])/(xs[1]-xs[0]));
-  const Y=v=>pad.t+(h-pad.t-pad.b)*(1-Math.min(v,ymax)/ymax);
+  const Y=v=>pad.t+(h-pad.t-pad.b)*(1-(L(v)-L(ylo))/(L(yhi)-L(ylo)));
   const colors={SPY:"var(--accent)",XSP:"var(--neg)",SPXW:"var(--warn)"};
-  let s=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Half-spread as a percentage of mid across moneyness">`;
-  s+=axes(w,h,pad,xs,ys,v=>v.toFixed(1)+"%",v=>v.toFixed(0)+"%");
-  s+=`<line class="gl" x1="${X(0)}" y1="${pad.t}" x2="${X(0)}" y2="${h-pad.b}" stroke-dasharray="3 3"/>
-      <text class="lbl" x="${X(0)+6}" y="${pad.t+12}">at the money</text>`;
-  // Shade the region where contracts are quoted with no bid at all. There is
-  // no spread to pay there because there is no market to sell into.
+
+  let s=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Half-spread as a percentage of mid across moneyness, log scale">`;
+  for(const t of [1,2,5,10,20,50,100]){
+    if(t<ylo||t>yhi) continue;
+    s+=`<line class="gl" x1="${pad.l}" y1="${Y(t)}" x2="${w-pad.r}" y2="${Y(t)}"/>
+        <text class="ax" x="${pad.l-8}" y="${Y(t)+3}" text-anchor="end">${t}%</text>`;
+  }
+  for(let i=0;i<=6;i++){
+    const v=xs[0]+(xs[1]-xs[0])*i/6;
+    s+=`<text class="ax" x="${X(v)}" y="${h-pad.b+16}" text-anchor="middle">${v.toFixed(1)}%</text>`;
+  }
   const nb=Math.max(...names.map(n=>curves[n].no_bid_from_pct ?? -99));
   if(nb>-90 && nb>xs[0]){
     s+=`<rect x="${X(xs[0])}" y="${pad.t}" width="${Math.max(0,X(nb)-X(xs[0]))}" height="${h-pad.t-pad.b}"
          fill="var(--neg)" opacity=".07"/>
-        <text class="lbl" x="${X(xs[0])+8}" y="${h-pad.b-8}" opacity=".8">no bid — untradeable</text>`;
+        <text class="lbl" x="${X(xs[0])+8}" y="${h-pad.b-8}" opacity=".85">no bid — untradeable</text>`;
   }
-  // Individual strikes are noisy - a single one-tick-wide quote on a cheap
-  // contract reads as a huge percentage. Bin by moneyness and plot the median
-  // so the shape of the cost curve is visible rather than the quote noise.
-  const BIN=0.25;
-  const binned=n=>{
-    const b=new Map();
-    for(const p of curves[n].points){
-      const k=Math.round(p.m/BIN)*BIN;
-      (b.get(k)||b.set(k,[]).get(k)).push(p.hs);
-    }
-    return [...b.entries()].map(([m,v])=>({m,hs:v.sort((x,y)=>x-y)[Math.floor(v.length/2)]}))
-                           .sort((a,b)=>a.m-b.m);
-  };
-  names.forEach((n,i)=>{
-    const pts=binned(n);
-    if(pts.length<2) return;
-    const dpath=pts.map((p,j)=>`${j?"L":"M"}${X(p.m).toFixed(1)},${Y(p.hs).toFixed(1)}`).join("");
-    s+=`<path d="${dpath}" fill="none" stroke="${colors[n]||'var(--ink-dim)'}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
-    pts.forEach(p=>{s+=`<circle cx="${X(p.m).toFixed(1)}" cy="${Y(p.hs).toFixed(1)}" r="2.5" fill="${colors[n]||'var(--ink-dim)'}" opacity=".7"/>`;});
-    s+=`<circle cx="${pad.l+12}" cy="${pad.t+10+i*18}" r="4" fill="${colors[n]||'var(--ink-dim)'}"/>
-        <text class="lbl" x="${pad.l+22}" y="${pad.t+14+i*18}">${n}</text>`;
+  s+=`<line class="gl" x1="${X(0)}" y1="${pad.t}" x2="${X(0)}" y2="${h-pad.b}" stroke-dasharray="3 3"/>
+      <text class="lbl" x="${X(0)+6}" y="${pad.t+12}">at the money</text>`;
+
+  series.forEach((x,i)=>{
+    const dpath=x.pts.map((p,j)=>`${j?"L":"M"}${X(p.m).toFixed(1)},${Y(p.hs).toFixed(1)}`).join("");
+    s+=`<path d="${dpath}" fill="none" stroke="${colors[x.n]||'var(--ink-dim)'}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    x.pts.forEach(p=>{s+=`<circle cx="${X(p.m).toFixed(1)}" cy="${Y(p.hs).toFixed(1)}" r="3" fill="${colors[x.n]||'var(--ink-dim)'}"/>`;});
+    s+=`<circle cx="${pad.l+12}" cy="${pad.t+10+i*18}" r="4" fill="${colors[x.n]||'var(--ink-dim)'}"/>
+        <text class="lbl" x="${pad.l+22}" y="${pad.t+14+i*18}">${x.n}</text>`;
   });
-  s+=`<text class="lbl" x="${pad.l}" y="${h-2}">moneyness (negative = further out of the money) →</text></svg>`;
+  s+=`<text class="lbl" x="${pad.l}" y="${h-4}">moneyness (negative = further out of the money) →   log scale</text></svg>`;
   $("#curve").innerHTML=s;
-  const spy=curves.SPY?.points||[];
-  const atm=spy.filter(p=>p.m>-0.5).map(p=>p.hs), far=spy.filter(p=>p.m<-2&&p.m>-3.5).map(p=>p.hs);
-  const med=a=>a.length?a.slice().sort((x,y)=>x-y)[Math.floor(a.length/2)]:null;
-  const a=med(atm), f=med(far);
-  $("#curvecap").textContent = (a&&f)
-    ? `SPY: about ${a.toFixed(1)}% of mid at the money, rising to roughly ${f.toFixed(1)}% around 2–3% out of the money — a ${(f/a).toFixed(0)}× increase in relative cost for moving to the strike a delta screen would pick.`
-    : "Half the bid-ask as a percentage of the option's mid price.";
+
+  const spy=series.find(x=>x.n==="SPY");
+  if(spy){
+    const near=spy.pts.filter(p=>p.m>=-0.6).map(p=>p.hs);
+    const far=spy.pts.filter(p=>p.m<=-2 && p.m>=-3.5).map(p=>p.hs);
+    const med=a=>a.length?a.slice().sort((x,y)=>x-y)[Math.floor(a.length/2)]:null;
+    const a=med(near), f=med(far);
+    $("#curvecap").textContent = (a&&f)
+      ? `SPY: about ${a.toFixed(1)}% of mid at the money, rising to roughly ${f.toFixed(0)}% around 2–3% out — a ${(f/a).toFixed(0)}× increase in relative cost for moving to the strike a delta screen would pick. Beyond the shaded edge there is no bid at all.`
+      : "Half the bid-ask as a percentage of the option's mid price.";
+  }
 }
 
 function renderWidening(d){
