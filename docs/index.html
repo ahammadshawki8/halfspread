@@ -20,12 +20,18 @@
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme:dark){
-  :root{
+  :root:not([data-theme="light"]){
     --paper:#0B1119; --card:#111926; --ink:#E9EEF4; --ink-2:#B9C6D4; --muted:#7D8FA3;
     --rule:#1F2A38; --rule-soft:#18212D;
     --bid:#46B189; --ask:#E4707F; --measure:#E0A030;
     --measure-wash:rgba(224,160,48,.14);
   }
+}
+:root[data-theme="dark"]{
+  --paper:#0B1119; --card:#111926; --ink:#E9EEF4; --ink-2:#B9C6D4; --muted:#7D8FA3;
+  --rule:#1F2A38; --rule-soft:#18212D;
+  --bid:#46B189; --ask:#E4707F; --measure:#E0A030;
+  --measure-wash:rgba(224,160,48,.14);
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -213,6 +219,45 @@ td.m{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13.5px}
 .copy.done{color:var(--bid);border-color:var(--bid)}
 #boardtable tbody tr{cursor:pointer}
 #boardtable tbody tr:hover{background:var(--measure-wash)}
+
+/* ---------- identity ---------- */
+.logo{width:30px;height:20px;flex:0 0 auto}
+.wordmark,.navmark{display:flex;align-items:center;gap:9px}
+.navmark span{letter-spacing:.06em}
+.repolink{display:inline-flex;align-items:center;gap:5px;text-decoration:none;color:var(--muted)}
+.repolink:hover{color:var(--ink)}
+.themebtn{width:24px;height:24px;padding:0;border:1px solid var(--rule);border-radius:50%;
+  background:transparent;cursor:pointer;position:relative;flex:0 0 auto}
+.themebtn:hover{border-color:var(--muted)}
+.themebtn::before{content:"";position:absolute;inset:5px;border-radius:50%;
+  background:var(--ink);
+  /* half-lit, like the gap this whole page is about */
+  clip-path:polygon(0 0,50% 0,50% 100%,0 100%)}
+
+/* ---------- live pulse ---------- */
+.beat{position:relative}
+.beat::after{content:"";position:absolute;inset:-4px;border-radius:50%;
+  border:1px solid var(--bid);opacity:0;animation:ping 2.4s ease-out infinite}
+@keyframes ping{0%{transform:scale(.6);opacity:.85}70%{transform:scale(2.1);opacity:0}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.beat::after{animation:none}}
+
+/* ---------- hero video ---------- */
+.video{margin:40px 0 0}
+.frame{position:relative;padding-top:56.25%;border:1px solid var(--rule);border-radius:3px;
+  overflow:hidden;background:var(--card)}
+.frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.frame .placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;
+  padding:24px;color:var(--muted);font-family:var(--mono);font-size:12.5px;line-height:1.9}
+
+/* ---------- back to top ---------- */
+.totop{position:fixed;right:22px;bottom:22px;width:40px;height:40px;border-radius:50%;
+  border:1px solid var(--rule);background:var(--card);color:var(--ink-2);cursor:pointer;
+  display:grid;place-items:center;opacity:0;pointer-events:none;
+  transition:opacity .25s ease,transform .25s ease,color .2s;transform:translateY(6px);
+  box-shadow:0 1px 3px rgba(0,0,0,.10)}
+.totop.on{opacity:1;pointer-events:auto;transform:none}
+.totop:hover{color:var(--ink);border-color:var(--muted)}
+@media(prefers-reduced-motion:reduce){.totop{transition:opacity .01s}}
 footer{margin-top:74px;padding-top:22px;border-top:1px solid var(--ink);
   font-size:13.5px;color:var(--muted);line-height:1.65}
 .empty{color:var(--muted);font-family:var(--mono);font-size:13px;padding:26px 0}
@@ -223,7 +268,7 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
 <div class="shell">
 
 <nav aria-label="Sections">
-  <b>HALFSPREAD</b>
+  <b class="navmark"><svg class="logo" viewBox="0 0 34 22" aria-hidden="true"><rect x="1" y="3" width="3.4" height="16" rx="1.2" fill="var(--bid)"/><rect x="29.6" y="3" width="3.4" height="16" rx="1.2" fill="var(--ask)"/><rect x="7" y="10" width="20" height="2.4" rx="1.2" fill="var(--measure)"/><rect x="7" y="6" width="1.6" height="10" rx=".8" fill="var(--measure)" opacity=".55"/><rect x="25.4" y="6" width="1.6" height="10" rx=".8" fill="var(--measure)" opacity=".55"/></svg><span>HALFSPREAD</span></b>
   <a href="#finding">The finding</a>
   <a href="#try">Price a trade</a>
   <a href="#ledger">Ledger</a>
@@ -242,12 +287,24 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
 
 <main>
   <div class="mast">
-    <div class="wordmark">HALFSPREAD</div>
+    <div class="wordmark"><svg class="logo" viewBox="0 0 34 22" aria-hidden="true"><rect x="1" y="3" width="3.4" height="16" rx="1.2" fill="var(--bid)"/><rect x="29.6" y="3" width="3.4" height="16" rx="1.2" fill="var(--ask)"/><rect x="7" y="10" width="20" height="2.4" rx="1.2" fill="var(--measure)"/><rect x="7" y="6" width="1.6" height="10" rx=".8" fill="var(--measure)" opacity=".55"/><rect x="25.4" y="6" width="1.6" height="10" rx=".8" fill="var(--measure)" opacity=".55"/></svg><span>HALFSPREAD</span></div>
     <div class="status">
       <span id="live"><span class="beat"></span>loading</span>
       <span>Alpaca paper <span class="num" id="acct"></span></span>
       <span>equity <span class="num" id="eq"></span></span>
       <span id="gen"></span>
+      <a class="repolink" href="https://github.com/ahammadshawki8/halfspread"
+         target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+          0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01
+          1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95
+          0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 0 1 2-.27c.68
+          0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0
+          3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01
+          8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        github</a>
+      <button class="themebtn" id="themebtn" type="button" aria-label="Switch theme"></button>
     </div>
   </div>
 
@@ -256,6 +313,11 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
     <p class="standfirst">Every premium-selling agent opens a position and later closes it.
       That second trade is where the money goes, and almost nobody prices it. This agent
       measures what execution costs before every order, then declines to pay it twice.</p>
+
+    <div class="video" id="video">
+      <div class="frame" id="videoframe"></div>
+      <p class="hint" id="videonote"></p>
+    </div>
 
     <div class="glance" id="glance"></div>
 
@@ -580,7 +642,8 @@ function axes(w,pad,ticks,fmt){
 
 function renderCurve(d){
   const cv=d.cost_curves||{};
-  const names=Object.keys(cv).filter(k=>(cv[k].points||[]).length>2);
+  const TRADED=["SPY","XSP","SPXW"];
+  const names=Object.keys(cv).filter(k=>TRADED.includes(k)&&(cv[k].points||[]).length>2);
   if(!names.length){$("#curvechart").innerHTML='<div class="empty">No observations yet.</div>';return;}
   const BIN=0.5,MIN=2;
   const binned=n=>{const b=new Map();
@@ -616,8 +679,8 @@ function renderCurve(d){
       fill="none" stroke="${COL[x.n]||"var(--muted)"}" stroke-width="2" stroke-linejoin="round"/>`;
     x.pts.forEach(p=>s+=`<circle cx="${X(p.m).toFixed(1)}" cy="${Y(p.hs).toFixed(1)}" r="2.6" fill="${COL[x.n]||"var(--muted)"}"/>`);
     const lx=w-pad.r-46;
-    s+=`<circle cx="${lx}" cy="${pad.t+9+i*16}" r="3.5" fill="${COL[x.n]||"var(--muted)"}"/>
-        <text class="lb" x="${lx+8}" y="${pad.t+13+i*16}" fill="${COL[x.n]}">${x.n}</text>`;});
+    s+=`<circle cx="${lx}" cy="${pad.t+9+i*20}" r="3.5" fill="${COL[x.n]||"var(--muted)"}"/>
+        <text class="lb" x="${lx+9}" y="${pad.t+13+i*20}" fill="${COL[x.n]}">${x.n}</text>`;});
   s+=`<text class="lb" x="${pad.l}" y="${h-5}">moneyness, negative is further out of the money</text></svg>`;
   $("#curvechart").innerHTML=s;
   const f=(d.verification&&d.verification.facts)||{};
@@ -630,8 +693,10 @@ function renderCurve(d){
 
 function renderWidening(d){
   const W=d.widening||{};
-  const series=Object.keys(W).map(n=>({n,s:(W[n].series||[]).filter(p=>Object.keys(p.vs_open||{}).length)}))
-                             .filter(x=>x.s.length>1);
+  const TRADED=["SPY","XSP","SPXW"];
+  const series=Object.keys(W).filter(n=>TRADED.includes(n))
+    .map(n=>({n,s:(W[n].series||[]).filter(p=>Object.keys(p.vs_open||{}).length)}))
+    .filter(x=>x.s.length>1);
   if(!series.length){$("#widen").innerHTML='<div class="empty">Populates once the session has two readings.</div>';return;}
   const w=1000,h=290,pad={l:52,r:14,t:14,b:38};
   const avg=p=>{const v=Object.values(p.vs_open);return v.reduce((a,b)=>a+b,0)/v.length;};
@@ -647,8 +712,8 @@ function renderWidening(d){
     s+=`<path d="${x.s.map((p,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(avg(p)).toFixed(1)}`).join("")}"
       fill="none" stroke="${COL[x.n]||"var(--muted)"}" stroke-width="2"/>`;
     const lx=w-pad.r-46;
-    s+=`<circle cx="${lx}" cy="${pad.t+9+k*16}" r="3.5" fill="${COL[x.n]||"var(--muted)"}"/>
-        <text class="lb" x="${lx+8}" y="${pad.t+13+k*16}" fill="${COL[x.n]}">${x.n}</text>`;});
+    s+=`<circle cx="${lx}" cy="${pad.t+9+k*20}" r="3.5" fill="${COL[x.n]||"var(--muted)"}"/>
+        <text class="lb" x="${lx+9}" y="${pad.t+13+k*20}" fill="${COL[x.n]}">${x.n}</text>`;});
   s+=`<text class="lb" x="${pad.l}" y="${h-5}">session progress</text></svg>`;
   $("#widen").innerHTML=s;
   const spy=series.find(x=>x.n==="SPY")||series[0];
@@ -667,7 +732,8 @@ function renderEmpirical(d){
   const lo=Math.min(...rows.map(r=>r.p01))*1.3, hi=Math.max(...rows.map(r=>r.p95))*1.5;
   const X=i=>pad.l+(w-pad.l-pad.r)*(i/(rows.length-1));
   const Y=v=>pad.t+(h-pad.t-pad.b)*(1-(v-lo)/(hi-lo));
-  const ticks=[];for(let i=0;i<=4;i++){const v=hi-(hi-lo)*i/4;ticks.push({v,y:Y(v)});}
+  // Skip the bottom tick: it sits on the axis line where the hour labels are.
+  const ticks=[];for(let i=0;i<4;i++){const v=hi-(hi-lo)*i/4;ticks.push({v,y:Y(v)});}
   let s=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Distribution of the SPY move from each hour to the close">`;
   s+=axes(w,pad,ticks,v=>v.toFixed(1)+"%");
   s+=`<line x1="${pad.l}" y1="${Y(0)}" x2="${w-pad.r}" y2="${Y(0)}" stroke="var(--muted)" stroke-dasharray="4 3"/>`;
@@ -679,8 +745,8 @@ function renderEmpirical(d){
   s+=`<path d="${rows.map((r,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(r.p50).toFixed(1)}`).join("")}"
       fill="none" stroke="var(--muted)" stroke-width="1.2"/>`;
   rows.forEach((r,i)=>s+=`<text class="ax" x="${X(i)}" y="${h-pad.b+20}" text-anchor="middle">${r.hour}:00</text>`);
-  s+=`<text class="lb" x="${pad.l+8}" y="${pad.t+13}" fill="var(--ask)">worst 1 in 100 sessions</text>
-      <text class="lb" x="${pad.l+8}" y="${pad.t+29}" fill="var(--bid)">middle 90 in 100</text>
+  s+=`<text class="lb" x="${pad.l+10}" y="${pad.t+13}" fill="var(--ask)">worst 1 in 100 sessions</text>
+      <text class="lb" x="${pad.l+10}" y="${pad.t+33}" fill="var(--bid)">middle 90 in 100</text>
       <text class="lb" x="${pad.l}" y="${h-4}">hour of the trading day, Eastern</text></svg>`;
   $("#emp").innerHTML=s;
   const f=rows[0],e=d.empirical;
@@ -868,9 +934,9 @@ function renderBoundary(){
   const box=(x,y,bw,bh,label,sub,stroke,dash)=>
     `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="none"
        stroke="${stroke}" stroke-width="1.5"${dash?' stroke-dasharray="4 3"':''}/>
-     <text class="lb" x="${x+bw/2}" y="${y+(sub?bh/2-3:bh/2+4)}" text-anchor="middle"
+     <text class="lb" x="${x+bw/2}" y="${y+(sub?bh/2-7:bh/2+4)}" text-anchor="middle"
        fill="var(--ink)" style="font-size:12.5px">${label}</text>
-     ${sub?`<text class="lb" x="${x+bw/2}" y="${y+bh/2+14}" text-anchor="middle"
+     ${sub?`<text class="lb" x="${x+bw/2}" y="${y+bh/2+13}" text-anchor="middle"
        style="font-size:10.5px">${sub}</text>`:""}`;
   const arrow=(x1,y1,x2,y2,label,col)=>
     `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="1.5"
@@ -978,6 +1044,70 @@ function wireBoardToTool(){
   });
 }
 
+
+/* ---------------- the video slot ----------------
+   TO PUBLISH THE DEMO: put the YouTube id or the full watch/share URL in
+   VIDEO below, commit, and the hero embeds it. Nothing else has to change.
+   Examples that all work:
+       "dQw4w9WgXcQ"
+       "https://youtu.be/dQw4w9WgXcQ"
+       "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+   Leave it empty and the slot shows a placeholder instead of a broken frame. */
+const VIDEO = "";
+
+function youtubeId(v){
+  if(!v) return "";
+  v=String(v).trim();
+  if(/^[\w-]{11}$/.test(v)) return v;
+  const m=v.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);
+  return m?m[1]:"";
+}
+function renderVideo(){
+  const id=youtubeId(VIDEO), f=$("#videoframe"), note=$("#videonote");
+  if(!id){
+    f.innerHTML='<div class="placeholder">The three minute demo lands here.<br>'+
+      'Until then, everything it shows is on this page and running live.</div>';
+    note.textContent="";
+    return;
+  }
+  f.innerHTML='<iframe src="https://www.youtube-nocookie.com/embed/'+id+
+    '?rel=0&modestbranding=1" title="HALFSPREAD demo" loading="lazy" allowfullscreen '+
+    'allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"></iframe>';
+  note.innerHTML='Also on <a href="https://www.youtube.com/watch?v='+id+
+    '" target="_blank" rel="noopener">YouTube</a>.';
+}
+
+/* ---------------- theme ---------------- */
+function initTheme(){
+  const btn=$("#themebtn");
+  const sysDark=()=>window.matchMedia("(prefers-color-scheme:dark)").matches;
+  let saved=null;
+  try{ saved=localStorage.getItem("hs-theme"); }catch(e){}
+  const apply=t=>{
+    if(t) document.documentElement.setAttribute("data-theme",t);
+    else document.documentElement.removeAttribute("data-theme");
+    const dark = t ? t==="dark" : sysDark();
+    btn.setAttribute("aria-label", dark?"Switch to light":"Switch to dark");
+    btn.title = dark?"Light":"Dark";
+  };
+  apply(saved);
+  btn.addEventListener("click",()=>{
+    const cur=document.documentElement.getAttribute("data-theme");
+    const now=cur? (cur==="dark"?"light":"dark") : (sysDark()?"light":"dark");
+    apply(now);
+    try{ localStorage.setItem("hs-theme",now); }catch(e){}
+  });
+}
+
+/* ---------------- back to top ---------------- */
+function initTop(){
+  const b=$("#totop");
+  const onScroll=()=>b.classList.toggle("on", window.scrollY>700);
+  window.addEventListener("scroll",onScroll,{passive:true}); onScroll();
+  b.addEventListener("click",()=>window.scrollTo({top:0,
+    behavior:window.matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"}));
+}
+
 function spy(){
   const links=[...document.querySelectorAll("nav a")];
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;
@@ -986,6 +1116,7 @@ function spy(){
   document.querySelectorAll("section[id]").forEach(s=>io.observe(s));
 }
 
+initTheme(); initTop(); renderVideo();
 renderMethod(); renderRefs(); renderStack(); renderBoundary(); renderDiff();
 fetch("data.json?t="+Date.now()).then(r=>r.json()).then(d=>{
   $("#acct").textContent=(d.account&&d.account.account_number)||"paper";
