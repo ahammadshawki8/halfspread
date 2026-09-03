@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 from dataclasses import asdict, dataclass
 
-from . import config, pricing
+from . import config, empirical, pricing
 from .chain import Contract
 
 CONTRACT_MULTIPLIER = 100.0
@@ -116,6 +116,14 @@ class Evaluation:
     structure: str = "put_credit_spread"
     legs: tuple = ()
 
+    # Which probability the sizing actually used. Black-Scholes assumes
+    # lognormal returns; measured sessions are not, so the agent takes the
+    # worse of the two and records which one bound.
+    prob_source: str = "model"
+    prob_model: float = 0.0
+    prob_empirical: float | None = None
+    empirical_samples: int = 0
+
 
 def _expected_put_payoff(K: float, F: float, T: float, sigma: float) -> float:
     """E[max(K - S_T, 0)] under a lognormal terminal distribution with mean F.
@@ -173,7 +181,12 @@ def evaluate(
     net_ev = expected_payoff
     net_ev_mid_naive = spread.credit_mid * CONTRACT_MULTIPLIER - expected_terminal_loss
 
-    prob_itm = pricing.prob_itm(spot_equiv, spread.short.strike, T, r, sigma_used, "put")
+    model_itm = pricing.prob_itm(spot_equiv, spread.short.strike, T, r, sigma_used, "put")
+    # Black-Scholes assumes lognormal returns; measured SPY sessions are not.
+    # Take the worse of the diffusion and 668 sessions of actual intraday moves,
+    # so a fat tail the model does not know about still costs us size.
+    breach = empirical.conservative_breach(model_itm, spot_equiv, spread.short.strike, "put")
+    prob_itm = breach["prob"]
     prob_win = 1.0 - prob_itm
     g = pricing.greeks(spot_equiv, spread.short.strike, T, r, iv_s, "put")
 
@@ -213,6 +226,10 @@ def evaluate(
         net_ev_if_round_tripped_projected=round(net_ev - exit_cost_projected, 2),
         admissible=reject is None,
         reject_reason=reject,
+        prob_source=breach["source"],
+        prob_model=breach["model"],
+        prob_empirical=breach["empirical"],
+        empirical_samples=breach["samples"],
     )
 
 

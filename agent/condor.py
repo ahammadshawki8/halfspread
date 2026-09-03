@@ -16,7 +16,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from . import config, pricing
+from . import config, empirical, pricing
 from .chain import Contract
 from .cost import CONTRACT_MULTIPLIER, Evaluation, _expected_put_payoff
 
@@ -132,9 +132,11 @@ def evaluate(
     exit_cost_dollars = ic.exit_cost_if_closed * CONTRACT_MULTIPLIER
     widening = config.EXIT_WIDENING_MEASURED.get(ic.underlying, config.EXIT_WIDENING_DEFAULT)
 
-    p_put_itm = pricing.prob_itm(spot_equiv, ic.put_short.strike, T, r, sig_p, "put")
-    p_call_itm = pricing.prob_itm(spot_equiv, ic.call_short.strike, T, r, sig_c, "call")
-    p_breach = min(1.0, p_put_itm + p_call_itm)
+    m_put = pricing.prob_itm(spot_equiv, ic.put_short.strike, T, r, sig_p, "put")
+    m_call = pricing.prob_itm(spot_equiv, ic.call_short.strike, T, r, sig_c, "call")
+    b_put = empirical.conservative_breach(m_put, spot_equiv, ic.put_short.strike, "put")
+    b_call = empirical.conservative_breach(m_call, spot_equiv, ic.call_short.strike, "call")
+    p_breach = min(1.0, b_put["prob"] + b_call["prob"])
     g = pricing.greeks(spot_equiv, ic.put_short.strike, T, r, iv_p, "put")
 
     reject = _reject_reason(ic, spot_equiv, 1.0 - p_breach)
@@ -173,6 +175,12 @@ def evaluate(
         net_ev_if_round_tripped_projected=round(expected_payoff - exit_cost_dollars * widening, 2),
         admissible=reject is None,
         reject_reason=reject,
+        prob_source=("empirical" if "empirical" in (b_put["source"], b_call["source"])
+                     else "model"),
+        prob_model=round(min(1.0, m_put + m_call), 4),
+        prob_empirical=(round(min(1.0, (b_put["empirical"] or 0) + (b_call["empirical"] or 0)), 4)
+                        if b_put["empirical"] is not None else None),
+        empirical_samples=max(b_put["samples"], b_call["samples"]),
         structure="iron_condor",
         legs=(
             {"symbol": ic.put_long.symbol, "side": "buy", "position_intent": "buy_to_open"},
