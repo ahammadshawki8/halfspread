@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-03T10:13:45+00:00",
+  "generated_at": "2026-09-03T10:15:37+00:00",
   "account_id": "0509a308-f1ef-44e2-8e8b-8a6d0893f84b",
   "account": {
     "account_number": "PA31RB6YR1V6",
@@ -35,7 +35,7 @@
     "emergency_closes": 0,
     "vetoes": 2,
     "refusals": 0,
-    "journal_records": 121
+    "journal_records": 124
   },
   "cost_curves": {
     "SPY": {

@@ -14,7 +14,7 @@ from pathlib import Path
 
 from . import cli, config, journal, observe, settle
 
-OUT = config.ROOT / "site" / "data.json"
+OUT = config.ROOT / "docs" / "data.json"
 
 
 def _f(v, default=0.0) -> float:
