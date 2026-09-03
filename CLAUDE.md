@@ -569,6 +569,15 @@ named in each. Engagement counts, so post the numbers, not the adjectives.
 
 Newest first. One line per session. Keep it terse.
 
+- **2026-09-03 (session 1, final)** - Finalisation. Added the interactive decision engine in
+  the browser after the owner's critique that the page could only be read, not used. Swept emoji
+  and long dashes everywhere and made R11 a failing test. Redesigned the dashboard as a research
+  tearsheet with the bid-ask ladder as its hero. Ran the CI session workflow for the first time
+  (green). Fixed fill tracking, journal merge conflicts, and a duplicate id that was erasing a
+  whole section. **State at hand-off: 3 orders filled, $69.00 credit received, $7.00 entry cost
+  paid, $0.00 exit cost paid, 3 positions open and comfortably OTM, 10/10 verification, 39 tests.**
+  The hero now measures 26.99x: the gap on SPY 765P widened 0.01 to 0.05 in cents *and* the
+  option decayed 0.41 to 0.075, so the cost compounded from both directions on a live position.
 - **2026-09-03 (session 1, cont. 2)** - Tiers 3.5 and 5 done. Added the bounded Groq veto (it pulled US-Iran tensions and an oil surge out of live headlines, and independently flagged Friday's payrolls print), session runner, CI workflow, publisher and dashboard. Pages live. **Waiting on the 13:30 UTC open to verify a real fill on DEV, then go live on COMP.**
 - **2026-09-03 (session 1, cont.)** - Tiers 1-3 core built and verified. Full pipeline runs end to end on DEV: scan prices 115 candidates and admits 16; best is SPY 759/757 at 0.19 credit, $181 max loss, P(win) 0.897, net EV $4.68; risk sizes it at 5 contracts for $905; mleg payload accepted by Alpaca then cancelled; COMP arming guard confirmed to refuse. Remaining before the 13:30 UTC open: `run.py`, `monitor.py`, `settle.py`.
 - **2026-09-03 (session 1)** - Researched hackathon + ~90 competitors. Killed two candidates (dispersion; Vilkov's rules) on evidence. Locked HALFSPREAD. Installed Alpaca CLI + uv, created repo, wrote CLAUDE.md. DEV + COMP keys loaded and both profiles verified; COMP pristine at $100k. **Tier 0 complete** - index option data available, greeks NOT available (we compute our own), and the measured cost curve (§5.1 Finding 3) reshaped strike selection from delta-target to net-EV maximisation. Next: Tier 1.
