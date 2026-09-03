@@ -82,6 +82,11 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
     for r in records:
         if r.get("kind") != "observation":
             continue
+        # The curve chart stays on the traded three. Plotting names at different
+        # expiries on one axis would suggest single names are cheaper than the
+        # index, when the driver is hours to expiry.
+        if r.get("underlying") not in config.UNIVERSE:
+            continue
         rows = [p for p in r.get("rows", []) if -5.0 <= p["moneyness_pct"] <= 1.0]
         # A contract quoted with a zero bid has no two-sided market: you cannot
         # sell it at any price, so its "half-spread" is not a cost, it is the
@@ -184,6 +189,38 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
             "spot": r.get("reference_level"),
             "puts": sorted(rows, key=lambda x: x["k"]),
         }
+
+    # A snapshot across every watched name, with the expiry stated, so the
+    # comparison cannot be misread. Proximity to expiry is the variable.
+    board: list[dict] = []
+    seen_names: set = set()
+    for r in reversed(records):
+        if r.get("kind") != "observation" or r["underlying"] in seen_names:
+            continue
+        rows = [row for row in r.get("rows", [])
+                if (row.get("bid") or 0) > 0 and -1.0 <= row["moneyness_pct"] <= 0.0]
+        if len(rows) < 2:
+            continue
+        seen_names.add(r["underlying"])
+        vals = sorted(row["half_spread_pct"] for row in rows)
+        hours = None
+        try:
+            from .chain import expiry_close_utc
+            hours = round((expiry_close_utc(r["expiry"])
+                           - datetime.fromisoformat(r["ts"])).total_seconds() / 3600, 1)
+        except Exception:
+            pass
+        board.append({
+            "underlying": r["underlying"],
+            "tradeable": bool(r.get("tradeable", r["underlying"] in config.UNIVERSE)),
+            "expiry": r["expiry"],
+            "hours_to_expiry": hours,
+            "reference": r.get("reference_level"),
+            "half_spread_pct": vals[len(vals) // 2],
+            "strikes": len(rows),
+            "ts": r["ts"],
+        })
+    board.sort(key=lambda b: b["half_spread_pct"])
 
     gates = {
         "min_prob_win": config.MIN_PROB_WIN,
@@ -317,6 +354,7 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
         },
         "spread_story": spread_story,
         "chains": chains,
+        "cost_board": board,
         "gates": gates,
         # Sorted returns, thinned. A percentile lookup does not need all 668
         # values per hour and the page should not carry them.

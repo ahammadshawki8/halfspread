@@ -215,6 +215,7 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
   <a href="#differs">How it differs</a>
   <a href="#curve">Cost curve</a>
   <a href="#widening">Widening</a>
+  <a href="#board">By name</a>
   <a href="#tails">Tails</a>
   <a href="#verify">Verification</a>
   <a href="#research">Research</a>
@@ -310,6 +311,15 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
       of leaving is a statement about when you leave. These are the same strikes re-quoted
       through the session.</p>
     <figure><div id="widen"></div><figcaption id="widencap"></figcaption></figure>
+  </section>
+
+  <section id="board">
+    <h2>What it costs to cross, right now, by name</h2>
+    <p class="lede">Every name this desk watches, measured at the same moment and sorted by cost.
+      The hours column is the whole explanation: this is not a story about index options being
+      worse than single names, it is a story about proximity to expiry.</p>
+    <div class="scroll"><table id="boardtable"></table></div>
+    <p class="hint" id="boardnote"></p>
   </section>
 
   <section id="tails">
@@ -829,6 +839,39 @@ function renderDiff(){
      <tbody class="cmp">${DIFF.map(([a,b])=>`<tr><td>${a}</td><td>${b}</td></tr>`).join("")}</tbody>`;
 }
 
+
+/* ---------------- cost across every watched name ---------------- */
+function renderBoard(d){
+  const rows=d.cost_board||[];
+  if(!rows.length){$("#boardtable").innerHTML='<tbody><tr><td class="empty">No observations yet.</td></tr></tbody>';return;}
+  const max=Math.max(...rows.map(r=>r.half_spread_pct));
+  $("#boardtable").innerHTML=
+    `<thead><tr><th style="width:78px">Name</th><th style="width:96px">Expiry</th>
+      <th style="width:92px">Hours left</th><th style="width:96px">Reference</th>
+      <th style="width:88px">To cross</th><th>&nbsp;</th></tr></thead>
+     <tbody>${rows.map(r=>{
+       const pct=(r.half_spread_pct/max)*100;
+       const near=(r.hours_to_expiry!=null&&r.hours_to_expiry<2);
+       return `<tr>
+         <td class="m">${esc(r.underlying)}${r.tradeable?' <span class="tag" style="font-size:9.5px">traded</span>':''}</td>
+         <td class="m" style="color:var(--muted)">${esc(r.expiry)}</td>
+         <td class="m" style="color:${near?'var(--ask)':'var(--ink-2)'}">${r.hours_to_expiry!=null?r.hours_to_expiry.toFixed(1):"--"}</td>
+         <td class="m" style="color:var(--muted)">${r.reference!=null?r.reference.toFixed(2):""}</td>
+         <td class="m" style="color:${near?'var(--ask)':'var(--ink)'}">${r.half_spread_pct.toFixed(2)}%</td>
+         <td style="padding-right:0"><div style="height:9px;width:${pct.toFixed(1)}%;
+           background:${near?'var(--ask)':'var(--measure)'};opacity:.5;border-radius:1px"></div></td>
+       </tr>`;}).join("")}</tbody>`;
+  const soon=rows.filter(r=>r.hours_to_expiry!=null&&r.hours_to_expiry<2);
+  const later=rows.filter(r=>r.hours_to_expiry!=null&&r.hours_to_expiry>=2);
+  const med=a=>a.length?a.map(r=>r.half_spread_pct).sort((x,y)=>x-y)[Math.floor(a.length/2)]:null;
+  const s1=med(soon), s2=med(later);
+  $("#boardnote").textContent=(s1&&s2)
+    ? `Median cost to cross is ${s2.toFixed(2)}% with a day left and ${s1.toFixed(2)}% with under two hours, `+
+      `across ${rows.length} names measured at the same moment. That is the reason this desk plans to settle `+
+      `rather than to close: the trade you would have to exit near expiry is not the trade you entered.`
+    : `${rows.length} names measured at the same moment.`;
+}
+
 function spy(){
   const links=[...document.querySelectorAll("nav a")];
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;
@@ -845,7 +888,7 @@ fetch("data.json?t="+Date.now()).then(r=>r.json()).then(d=>{
   $("#live").innerHTML='<span class="beat"></span>'+((d.counts&&d.counts.journal_records)||0).toLocaleString()+" journal records";
   $("#feed").textContent=d.feed_note||"";
   renderGlance(d); renderLadder(d); tryInit(d); renderLedger(d); renderCurve(d);
-  renderWidening(d); renderEmpirical(d); renderVerify(d); renderLog(d);
+  renderWidening(d); renderBoard(d); renderEmpirical(d); renderVerify(d); renderLog(d);
   spy();
 }).catch(e=>{
   $("#live").innerHTML='<span class="beat" style="background:var(--ask)"></span>data unavailable';
