@@ -57,10 +57,17 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
     # For positions still open, the exit spread is not yet avoided - it is at
     # stake. Report what closing them right now would cost, from the most
     # recent monitor reading, and label it as such on the page.
+    # Keyed by the order that opened the position, and scoped to this account,
+    # so DEV experiments and re-opened strikes cannot inflate the count.
+    open_ids = {r.get("client_order_id") for r in intents}
+    settled_ids = {r.get("client_order_id") for r in settlements + emergencies}
+    live_ids = open_ids - settled_ids
     latest_close_cost: dict[str, float] = {}
     for r in records:
-        if r.get("kind") == "monitor" and r.get("exit_cost_now") is not None:
-            latest_close_cost[f"{r.get('underlying')} {r.get('spread')}"] = _f(r["exit_cost_now"])
+        if (r.get("kind") == "monitor" and _mine(r)
+                and r.get("exit_cost_now") is not None
+                and r.get("client_order_id") in live_ids):
+            latest_close_cost[r["client_order_id"]] = _f(r["exit_cost_now"])
     ledger["exit_cost_at_stake"] = round(sum(latest_close_cost.values()), 2)
     ledger["open_positions_priced"] = len(latest_close_cost)
 

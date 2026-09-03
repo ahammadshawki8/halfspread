@@ -187,6 +187,8 @@ def check(profile: str, threshold_pct: float, live: bool, arm: str | None) -> li
         close_cost = current_close_cost(sp, profile)
 
         rec = {
+            "profile": profile,
+            "client_order_id": sp.client_order_id,
             "underlying": sp.underlying,
             "spread": f"{sp.short_strike:g}/{sp.long_strike:g}",
             "qty": sp.qty,
