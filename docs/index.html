@@ -734,11 +734,15 @@ function renderGlance(d){
   const f=(d.verification&&d.verification.facts)||{}, L=d.ledger||{}, A=d.account||{},
         st=d.spread_story||{}, C=d.counts||{};
   const open=(C.fills||0)-(L.positions_resolved||0);
+  // Two ratios side by side read as a duplicate when the market happens to put
+  // them at the same number, so the second one shows the move itself.
+  const o=st.open||{}, l=st.latest||{};
   const items=[
     [f.cost_curve_ratio?f.cost_curve_ratio+"x":"--",
      "costlier to cross at the strike a delta screen picks than at the money"],
-    [st.times_wider?st.times_wider+"x":"--",
-     "costlier to leave one held contract now than at the opening bell"],
+    [(o.half_pct!=null&&l.half_pct!=null)
+       ? `${o.half_pct.toFixed(2)}% to ${l.half_pct.toFixed(2)}%` : "--",
+     `share of mid surrendered to leave ${st.symbol||"a held contract"}, opening bell against now`],
     [money(L.exit_cost_paid||0),
      open>0?`exit spread paid, against ${money(L.exit_cost_at_stake||0)} still at stake`
            :"exit spread paid across every position"],
