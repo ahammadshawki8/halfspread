@@ -102,15 +102,27 @@ def widening_report(underlying: str | None = None) -> dict:
     that also implies the wrong cause.
     """
     obs = [r for r in journal.read()
-           if r.get("kind") == "observation" and r.get("underlying") in config.UNIVERSE]
+           if r.get("kind") == "observation" and r.get("underlying") in config.UNIVERSE
+           # Regular session only. A pre-market reading carries the previous
+           # close's stale quotes and would flatter the baseline.
+           and "13:30" <= r["ts"][11:16] <= "20:00"]
     if underlying:
         obs = [r for r in obs if r.get("underlying") == underlying]
     if not obs:
         return {}
 
-    by_under: dict[str, list[dict]] = {}
+    # Key by expiry as well as name. The observer rolls forward past the 0DTE
+    # cutoff, so a series keyed on the name alone silently compares one
+    # expiry's opening spread against a different expiry's closing spread and
+    # reports a collapse that never happened. Keep the longest run per name.
+    grouped: dict[tuple, list[dict]] = {}
     for r in obs:
-        by_under.setdefault(r["underlying"], []).append(r)
+        grouped.setdefault((r["underlying"], r["expiry"]), []).append(r)
+
+    by_under: dict[str, list[dict]] = {}
+    for (name, _expiry), rows in grouped.items():
+        if len(rows) > len(by_under.get(name, [])):
+            by_under[name] = rows
 
     report: dict = {}
     for u, records in by_under.items():
@@ -127,6 +139,7 @@ def widening_report(underlying: str | None = None) -> dict:
             }
             series.append({"ts": r["ts"], "half_spread_pct": cur, "vs_open": ratios})
         report[u] = {
+            "expiry": base.get("expiry"),
             "first_observation": base["ts"],
             "observations": len(records),
             "baseline": base_bands,
