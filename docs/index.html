@@ -587,10 +587,28 @@ function cell(k,v,n,cls,lead){
 function renderLedger(d){
   const L=d.ledger||{},A=d.account||{},C=d.counts||{},S=d.scan_totals||{};
   const pnl=A.pnl||0, openNow=(C.fills||0)-(L.positions_resolved||0);
+  if(L.settlement_pending_at_broker){
+    const note=document.createElement("div");
+    note.className="note";
+    note.style.marginTop="0";
+    note.style.marginBottom="18px";
+    note.textContent=
+      "Settled P&L reads "+money(L.realized_pnl)+" while the account reads "+money(pnl)+". "+
+      "Alpaca's paper environment clears expiries overnight, so contracts that expired at "+
+      "today's close are still listed as positions and the broker's equity has not caught up "+
+      "yet. The settled figure is what those spreads are worth; the account figure is what the "+
+      "broker has processed so far. They converge at the next session.";
+    const grid=$("#ledgergrid");
+    grid.parentNode.insertBefore(note, grid);
+  }
   $("#ledgergrid").innerHTML=
+    cell("Realised P&L",money(L.realized_pnl),
+      (L.positions_resolved||0)>0
+        ? `${L.wins||0} of ${L.positions_resolved} expired out of the money. No closing trade on any of them.`
+        : "Nothing has settled yet.",dir(L.realized_pnl),true)+
     cell("Account",money(pnl),
-      openNow>0?`Mark to market with ${openNow} position${openNow>1?"s":""} still open. Settles at expiry.`
-               :`Against a $${(A.starting_equity||100000).toLocaleString()} start.`,dir(pnl),true)+
+      openNow>0?`Broker equity, ${openNow} position${openNow>1?"s":""} still open.`
+               :`Against a $${(A.starting_equity||100000).toLocaleString()} start.`,dir(pnl))+
     cell("Credit received",money(L.credit_received),
       `Collected across ${L.orders_filled||0} filled order${(L.orders_filled||0)===1?"":"s"}, confirmed against the broker.`,"up")+
     cell("Entry cost paid",money(L.entry_cost_paid),

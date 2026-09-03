@@ -21,15 +21,25 @@ class SizingDecision:
     risk_budget_remaining: float
 
 
-def realized_loss_today(records: list[dict] | None = None) -> float:
-    """Dollars of realised loss booked so far today. Positive number."""
+def realized_loss_today(records: list[dict] | None = None,
+                        profile: str | None = None) -> float:
+    """Dollars of realised loss booked so far today on one account.
+
+    Scoped by profile. Unscoped, a loss taken while experimenting on DEV would
+    eat into the competition account's daily risk budget and quietly stop it
+    trading, which is the same cross-account leak already fixed in settlement,
+    monitoring and the published ledger.
+    """
     records = records if records is not None else journal.read()
     loss = 0.0
     for r in records:
-        if r.get("kind") in ("settlement", "emergency_close"):
-            pnl = r.get("realized_pnl")
-            if isinstance(pnl, (int, float)) and pnl < 0:
-                loss += -pnl
+        if r.get("kind") not in ("settlement", "emergency_close"):
+            continue
+        if profile is not None and r.get("profile") != profile:
+            continue
+        pnl = r.get("realized_pnl")
+        if isinstance(pnl, (int, float)) and pnl < 0:
+            loss += -pnl
     return loss
 
 
@@ -63,6 +73,7 @@ def size(
     ev: Evaluation,
     positions: list[dict] | None = None,
     journal_records: list[dict] | None = None,
+    profile: str | None = None,
 ) -> SizingDecision:
     positions = positions or []
 
@@ -80,7 +91,7 @@ def size(
     if n_open >= config.MAX_CONCURRENT_POSITIONS:
         return refuse(f"{n_open} spreads already open, cap {config.MAX_CONCURRENT_POSITIONS}")
 
-    lost = realized_loss_today(journal_records)
+    lost = realized_loss_today(journal_records, profile)
     budget = config.MAX_LOSS_PER_DAY - lost - open_risk(positions)
     if budget <= 0:
         return refuse(

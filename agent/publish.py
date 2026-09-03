@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from pathlib import Path
 
 from . import cli, config, empirical, journal, observe, settle, verify
 
@@ -41,6 +40,21 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
     refusals = verify.count_refusals(records)
     scans = [r for r in records if r.get("kind") == "scan"]
 
+    # ---- account first: the ledger needs it to spot a pending expiry -------
+    account = {}
+    try:
+        a = cli.account(profile=profile)
+        account = {
+            "account_number": a.get("account_number"),
+            "equity": _f(a.get("equity")),
+            "cash": _f(a.get("cash")),
+            "options_level": a.get("options_trading_level"),
+            "starting_equity": config.ACCOUNT_EQUITY,
+            "pnl": round(_f(a.get("equity")) - config.ACCOUNT_EQUITY, 2),
+        }
+    except Exception as exc:
+        account = {"error": str(exc)}
+
     # ---- the ledger -------------------------------------------------------
     ledger = settle.report(profile)
 
@@ -69,6 +83,17 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
             latest_close_cost[r["client_order_id"]] = _f(r["exit_cost_now"])
     ledger["exit_cost_at_stake"] = round(sum(latest_close_cost.values()), 2)
     ledger["open_positions_priced"] = len(latest_close_cost)
+
+    # Alpaca paper clears expiries overnight: a contract that expired at the
+    # close is still listed as a position until the next session, so the
+    # broker's equity lags the settlement we have already computed. Say so
+    # rather than let the two numbers disagree in silence.
+    settled_syms = set()
+    for r in settlements:
+        for part in str(r.get("spread", "")).split("/"):
+            settled_syms.add(part.strip())
+    ledger["settlement_pending_at_broker"] = bool(settlements) and abs(
+        _f(ledger.get("realized_pnl")) - _f((account or {}).get("pnl"))) > 1.0
 
     fills = {r.get("order_id"): r for r in records
              if r.get("kind") == "order_filled" and _mine(r)}
@@ -284,21 +309,6 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
                 ),
             })
     decisions.reverse()
-
-    # ---- account ----------------------------------------------------------
-    account = {}
-    try:
-        a = cli.account(profile=profile)
-        account = {
-            "account_number": a.get("account_number"),
-            "equity": _f(a.get("equity")),
-            "cash": _f(a.get("cash")),
-            "options_level": a.get("options_trading_level"),
-            "starting_equity": config.ACCOUNT_EQUITY,
-            "pnl": round(_f(a.get("equity")) - config.ACCOUNT_EQUITY, 2),
-        }
-    except Exception as exc:
-        account = {"error": str(exc)}
 
     scan_totals = {
         "scans": len(scans),

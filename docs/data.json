@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-03T20:02:51+00:00",
+  "generated_at": "2026-09-03T20:09:19+00:00",
   "verification": {
     "passed": 10,
     "total": 10,
@@ -8,7 +8,7 @@
       {
         "ok": true,
         "claim": "The journal exists and is readable.",
-        "evidence": "7036 records across 1 file(s)."
+        "evidence": "7063 records across 1 file(s)."
       },
       {
         "ok": true,
@@ -57,7 +57,7 @@
       }
     ],
     "facts": {
-      "journal_records": 7036,
+      "journal_records": 7063,
       "orders": 3,
       "requoted": 3,
       "max_abs_drift": 7.0,
@@ -172,14 +172,15 @@
     "realized_pnl_if_round_tripped": 61.0,
     "advantage_from_not_exiting": 10.0,
     "account_equity": 100032.65,
-    "exit_cost_at_stake": 3.0,
+    "exit_cost_at_stake": 1.0,
     "open_positions_priced": 1,
+    "settlement_pending_at_broker": true,
     "credit_received": 69.0,
     "orders_filled": 3
   },
   "scan_totals": {
-    "scans": 234,
-    "candidates_priced": 40579,
+    "scans": 235,
+    "candidates_priced": 40629,
     "candidates_admissible": 958
   },
   "counts": {
@@ -189,7 +190,7 @@
     "emergency_closes": 0,
     "vetoes": 4,
     "refusals": 37,
-    "journal_records": 7033
+    "journal_records": 7060
   },
   "spread_story": {
     "symbol": "SPY 765 put",

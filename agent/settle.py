@@ -13,7 +13,7 @@ like almost every other agent in this competition closes theirs.
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from . import chain, cli, config, journal, monitor

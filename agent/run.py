@@ -111,7 +111,7 @@ def cycle(
     expiry = best.expiry
 
     positions = cli.positions(profile=profile)
-    sizing = risk.size(best, positions)
+    sizing = risk.size(best, positions, profile=profile)
     journal.write(
         "sizing",
         approved=sizing.approved, qty=sizing.qty, reason=sizing.reason,

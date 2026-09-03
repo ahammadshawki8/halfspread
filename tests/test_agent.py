@@ -285,3 +285,57 @@ class TestExpectedPayoff(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class TestAccountIsolation(unittest.TestCase):
+    """Nothing measured on one account may affect the other. Every one of these
+    was a real leak at some point: the ledger, the monitor and the risk budget
+    all read a shared journal."""
+
+    def setUp(self):
+        from agent import risk as _risk
+        self.risk = _risk
+        self.records = [
+            {"kind": "settlement", "profile": "dev", "realized_pnl": -900.0},
+            {"kind": "settlement", "profile": "comp", "realized_pnl": -100.0},
+            {"kind": "settlement", "profile": "comp", "realized_pnl": 50.0},
+        ]
+
+    def test_dev_losses_do_not_consume_the_comp_budget(self):
+        self.assertEqual(self.risk.realized_loss_today(self.records, "comp"), 100.0)
+
+    def test_comp_losses_do_not_consume_the_dev_budget(self):
+        self.assertEqual(self.risk.realized_loss_today(self.records, "dev"), 900.0)
+
+    def test_unscoped_still_sums_everything(self):
+        self.assertEqual(self.risk.realized_loss_today(self.records), 1000.0)
+
+    def test_gains_never_count_as_loss(self):
+        only_wins = [{"kind": "settlement", "profile": "comp", "realized_pnl": 500.0}]
+        self.assertEqual(self.risk.realized_loss_today(only_wins, "comp"), 0.0)
+
+    def test_a_days_losses_can_stop_the_account_trading(self):
+        from agent import config
+        spent = [{"kind": "settlement", "profile": "comp",
+                  "realized_pnl": -config.MAX_LOSS_PER_DAY}]
+        ev = TestRiskSizing._ev(TestRiskSizing())
+        self.assertFalse(self.risk.size(ev, [], spent, profile="comp").approved)
+        # ...but only its own.
+        self.assertTrue(self.risk.size(ev, [], spent, profile="dev").approved)
+
+
+class TestRefusalDefinition(unittest.TestCase):
+    """The verifier, the dashboard and the README each counted refusals
+    differently and reported three numbers for one journal."""
+
+    def test_every_kind_of_refusal_is_counted_once(self):
+        from agent import verify
+        records = [
+            {"kind": "no_trade"},
+            {"kind": "hold_through_breach"},
+            {"kind": "order_abandoned"},
+            {"kind": "sizing", "approved": False},
+            {"kind": "sizing", "approved": True},     # not a refusal
+            {"kind": "order_submitted"},              # not a refusal
+        ]
+        self.assertEqual(len(verify.count_refusals(records)), 4)
