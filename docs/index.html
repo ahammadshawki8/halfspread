@@ -79,6 +79,10 @@ h1{font-size:clamp(34px,5.6vw,62px);line-height:1.06;font-weight:400;letter-spac
   transition:width .95s cubic-bezier(.4,0,.2,1)}
 .gaplab{position:absolute;top:55px;font-family:var(--mono);font-size:12.5px;color:var(--measure);
   font-weight:500;white-space:nowrap;transform:translateX(-50%)}
+.mid{position:absolute;top:11px;height:44px;width:1px;background:var(--rule)}
+.axisnote{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:22px;
+  padding-left:140px}
+@media(max-width:640px){.axisnote{padding-left:0}}
 @media(prefers-reduced-motion:reduce){.gap{transition:none}}
 .verdict{margin-top:32px;padding-top:20px;border-top:1px solid var(--rule-soft);
   font-size:18px;max-width:68ch;line-height:1.58}
@@ -295,27 +299,37 @@ function renderLadder(d){
   if(!st){$("#ladder").innerHTML='<div class="empty">No paired quotes recorded yet.</div>';return;}
   const o=st.open,l=st.latest;
   $("#ladtitle").textContent=st.symbol+(st.is_held?", a contract this desk is short":"");
-  $("#ladsub").textContent="The same option, quoted at the opening bell and again just now. "+
-    "Bid on the left, ask on the right, and between them the gap you cross to trade.";
-  const lo=Math.min(o.bid,l.bid)*0.7, hi=Math.max(o.ask,l.ask)*1.08;
-  const X=v=>((v-lo)/(hi-lo))*100;
+  $("#ladsub").textContent="The same option, quoted at the opening bell and again just now. Each row "+
+    "is centred on that quote's own mid price, so the gap you see is the share of the trade you "+
+    "surrender to cross it.";
+
+  // Each row is drawn relative to its OWN mid, not on a shared price axis.
+  // Plotted absolutely, a one-cent gap on a forty-cent option is two pixels
+  // wide and the comparison, which is the entire point, disappears. Relative
+  // to mid, the gap IS the cost, and the two rows are directly comparable.
+  const span=Math.max(9,Math.max(o.half_pct,l.half_pct)*1.9);   // percent either side
+  const X=pct=>50+(pct/span)*50;
   const rung=(q,label,sub)=>{
-    const bx=X(q.bid), ax=X(q.ask), w=Math.max(ax-bx,0.7);
+    const bx=X(-q.half_pct), ax=X(q.half_pct), w=Math.max(ax-bx,1.2);
     return `<div class="rung">
       <div class="when"><em>${label}</em>${sub}</div>
       <div class="bar"><div class="track"></div>
+        <div class="mid" style="left:50%"></div>
         <div class="quote b" style="left:${bx}%"></div>
         <div class="quote a" style="left:${ax}%"></div>
-        <div class="qlab b" style="left:${bx}%;transform:translateX(-100%);padding-right:9px">bid ${q.bid.toFixed(2)}</div>
-        <div class="qlab a" style="left:${ax}%;padding-left:9px">ask ${q.ask.toFixed(2)}</div>
+        <div class="qlab b" style="left:${bx}%;transform:translateX(-100%);padding-right:10px">bid ${q.bid.toFixed(2)}</div>
+        <div class="qlab a" style="left:${ax}%;padding-left:10px">ask ${q.ask.toFixed(2)}</div>
         <div class="gap" data-w="${w}" style="left:${bx}%;width:0%"></div>
-        <div class="gaplab" style="left:${bx+w/2}%">${q.half_pct.toFixed(2)}% of mid to cross</div>
+        <div class="gaplab" style="left:50%">${q.half_pct.toFixed(2)}% of mid to cross</div>
       </div></div>`;};
   $("#ladder").innerHTML=rung(o,"At the open",o.ts.slice(11,16)+" UTC")+
-                         rung(l,"Now",l.ts.slice(11,16)+" UTC");
+                         rung(l,"Now",l.ts.slice(11,16)+" UTC")+
+    `<div class="axisnote">each row centred on its own mid, marked by the vertical rule</div>`;
+
   const grow=()=>document.querySelectorAll(".gap").forEach(g=>{g.style.width=g.dataset.w+"%";});
   if(window.matchMedia("(prefers-reduced-motion:reduce)").matches) grow();
   else requestAnimationFrame(()=>setTimeout(grow,280));
+
   const same=Math.abs(l.width-o.width)<0.005;
   $("#ladverdict").innerHTML=
     `<span class="big">${st.times_wider}x</span> more expensive to cross, on the same contract. `+
@@ -323,8 +337,8 @@ function renderLadder(d){
       ? `The gap never moved in cents: ${o.width.toFixed(2)} at the open and ${l.width.toFixed(2)} now.
          What shrank is the option, from ${o.mid.toFixed(2)} to ${l.mid.toFixed(2)}, so a fixed toll
          takes a larger share of every trade as expiry approaches.`
-      : `The gap widened from ${o.width.toFixed(2)} to ${l.width.toFixed(2)} while the option decayed,
-         so the cost compounds from both directions.`)+
+      : `The gap widened from ${o.width.toFixed(2)} to ${l.width.toFixed(2)} while the option decayed
+         from ${o.mid.toFixed(2)} to ${l.mid.toFixed(2)}, so the cost compounds from both directions.`)+
     ` This desk pays that toll once, on the way in, and lets the position settle rather than paying
       it again on the way out.`;
 }
