@@ -12,7 +12,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import cli, config, journal, observe, settle
+from . import cli, config, empirical, journal, observe, settle, verify
 
 OUT = config.ROOT / "docs" / "data.json"
 
@@ -143,8 +143,42 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
         "candidates_admissible": sum(int(r.get("candidates_admissible") or 0) for r in scans),
     }
 
+    # Re-run the credential-free verifier and publish its result, so the page
+    # carries the same checks a stranger with a clone can run.
+    try:
+        checks, facts = verify.run()
+        verification = {
+            "passed": len(checks.rows) - checks.failed,
+            "total": len(checks.rows),
+            "failed": checks.failed,
+            "rows": [{"ok": ok, "claim": claim, "evidence": ev}
+                     for ok, claim, ev in checks.rows],
+            "facts": facts,
+        }
+    except Exception as exc:
+        verification = {"error": str(exc)}
+
+    emp = empirical.load() or {}
+    empirical_summary = {
+        "sessions": emp.get("sessions"),
+        "bars": emp.get("bars"),
+        "start": emp.get("start"),
+        "by_hour": [
+            {"hour": int(h),
+             "n": v["n"],
+             "p01": v["quantiles"]["p01"] * 100,
+             "p05": v["quantiles"]["p05"] * 100,
+             "p50": v["quantiles"]["p50"] * 100,
+             "p95": v["quantiles"]["p95"] * 100,
+             "stdev": v["stdev"] * 100}
+            for h, v in (emp.get("by_hour_et") or {}).items()
+        ],
+    }
+
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "verification": verification,
+        "empirical": empirical_summary,
         "account_id": config.COMP_ACCOUNT_ID,
         "account": account,
         "ledger": ledger,

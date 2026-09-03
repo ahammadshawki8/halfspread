@@ -1,13 +1,155 @@
 {
-  "generated_at": "2026-09-03T14:36:08+00:00",
+  "generated_at": "2026-09-03T14:39:40+00:00",
+  "verification": {
+    "passed": 9,
+    "total": 9,
+    "failed": 0,
+    "rows": [
+      {
+        "ok": true,
+        "claim": "The journal exists and is readable.",
+        "evidence": "1387 records across 1 file(s)."
+      },
+      {
+        "ok": true,
+        "claim": "Every competition order carried a measured entry cost before it was sent.",
+        "evidence": "2/2 order intents record entry_cost."
+      },
+      {
+        "ok": true,
+        "claim": "Every order was re-priced from fresh quotes immediately before submission.",
+        "evidence": "2/2 carry a re-quote; largest decision-to-execution drift 4.00 $/contract."
+      },
+      {
+        "ok": true,
+        "claim": "Relative execution cost rises as strikes move out of the money.",
+        "evidence": "SPY median half-spread 1.04% of mid at the money vs 14.29% at 2-3% OTM (13.8x)."
+      },
+      {
+        "ok": true,
+        "claim": "The same strikes were re-quoted through the session and the spread was tracked.",
+        "evidence": "35 SPY observations; near-the-money half-spread ended at 3.64x its first reading."
+      },
+      {
+        "ok": true,
+        "claim": "Decisions not to trade are journalled with a specific reason.",
+        "evidence": "3 refusals and 3 non-trivial risk-review outcomes recorded."
+      },
+      {
+        "ok": true,
+        "claim": "No positions have settled yet, so no settlement claim is made.",
+        "evidence": "0 settlements in the journal."
+      },
+      {
+        "ok": true,
+        "claim": "Breach probabilities are checked against measured intraday history.",
+        "evidence": "5539 bars across 668 sessions since 2024-01-02."
+      },
+      {
+        "ok": true,
+        "claim": "Corrections to the journal are themselves journalled.",
+        "evidence": "1 correction record(s); nothing is removed silently."
+      }
+    ],
+    "facts": {
+      "journal_records": 1387,
+      "orders": 2,
+      "requoted": 2,
+      "max_abs_drift": 4.0,
+      "half_spread_atm_pct": 1.038,
+      "half_spread_far_pct": 14.286,
+      "cost_curve_ratio": 13.8,
+      "widening_vs_open": 3.64,
+      "observations": 35,
+      "refusals": 3,
+      "vetoes": 3,
+      "settlements": 0,
+      "realized_pnl": 0,
+      "exit_cost_paid": 0,
+      "exit_cost_avoided": 0,
+      "empirical_sessions": 668,
+      "empirical_bars": 5539,
+      "corrections": 1
+    }
+  },
+  "empirical": {
+    "sessions": 668,
+    "bars": 5539,
+    "start": "2024-01-02",
+    "by_hour": [
+      {
+        "hour": 9,
+        "n": 668,
+        "p01": -1.9778,
+        "p05": -1.0364,
+        "p50": 0.045,
+        "p95": 0.9188,
+        "stdev": 0.7576
+      },
+      {
+        "hour": 10,
+        "n": 668,
+        "p01": -1.8546,
+        "p05": -0.8533000000000001,
+        "p50": 0.0369,
+        "p95": 0.7671,
+        "stdev": 0.6969000000000001
+      },
+      {
+        "hour": 11,
+        "n": 668,
+        "p01": -1.5429,
+        "p05": -0.7093999999999999,
+        "p50": 0.017,
+        "p95": 0.7702,
+        "stdev": 0.6319
+      },
+      {
+        "hour": 12,
+        "n": 668,
+        "p01": -1.3617000000000001,
+        "p05": -0.6313,
+        "p50": 0.036000000000000004,
+        "p95": 0.6174,
+        "stdev": 0.5525
+      },
+      {
+        "hour": 13,
+        "n": 662,
+        "p01": -1.159,
+        "p05": -0.5588,
+        "p50": 0.0059,
+        "p95": 0.5382,
+        "stdev": 0.3929
+      },
+      {
+        "hour": 14,
+        "n": 662,
+        "p01": -0.9356,
+        "p05": -0.4586,
+        "p50": -0.0025,
+        "p95": 0.44289999999999996,
+        "stdev": 0.3184
+      },
+      {
+        "hour": 15,
+        "n": 526,
+        "p01": -0.4275,
+        "p05": -0.13899999999999998,
+        "p50": -0.0039,
+        "p95": 0.216,
+        "stdev": 0.1479
+      }
+    ]
+  },
   "account_id": "0509a308-f1ef-44e2-8e8b-8a6d0893f84b",
   "account": {
     "account_number": "PA31RB6YR1V6",
-    "equity": 99971.75,
+    "equity": 99969.75,
     "cash": 100051.75,
     "options_level": 3,
     "starting_equity": 100000.0,
-    "pnl": -28.25
+    "pnl": -30.25
   },
   "ledger": {
     "positions_resolved": 0,
@@ -35,7 +177,7 @@
     "emergency_closes": 0,
     "vetoes": 3,
     "refusals": 7,
-    "journal_records": 1359
+    "journal_records": 1384
   },
   "cost_curves": {
     "SPY": {
