@@ -1,36 +1,36 @@
 {
-  "$comment": [
-    "The window onto the desk. Alpaca's official MCP server, pointed at the",
-    "competition paper account, so the running system can be interrogated in plain",
-    "English: what is open, what did it refuse, what is the account doing.",
-    "",
-    "It is served through agent/mcp_readonly.py, a stdio proxy that ENFORCES",
-    "read-only rather than assuming it. Alpaca's ALPACA_TOOLSETS filter does not",
-    "remove the order-placing tools - they are built-in overrides, not spec-driven",
-    "operations - so a server started with account,trading,assets,news still exposes",
-    "place_option_order. The proxy strips every mutating tool out of tools/list and",
-    "refuses tools/call for one by name, even if a client never lists first.",
-    "Verified: 11 of 35 tools blocked, 24 reads pass through.",
-    "Run `python -m agent.mcp_readonly --audit` to see the split.",
-    "",
-    "Execution never goes through here. Every order HALFSPREAD places is an Alpaca",
-    "CLI invocation recorded verbatim in data/journal/*.jsonl and replayable by hand,",
-    "and agent/execute.py refuses the competition account without an explicit arming",
-    "token. The CLI is the agent's hands; MCP is the window.",
-    "",
-    "Keys are read from the environment and are never committed - copy .env.example",
-    "to .env and fill it in, or export them in your shell."
-  ],
-  "mcpServers": {
-    "alpaca": {
-      "command": "python",
-      "args": ["-m", "agent.mcp_readonly"],
-      "env": {
-        "ALPACA_API_KEY": "${ALPACA_COMP_API_KEY}",
-        "ALPACA_SECRET_KEY": "${ALPACA_COMP_SECRET_KEY}",
-        "ALPACA_PAPER_TRADE": "true",
-        "ALPACA_TOOLSETS": "account,trading,assets,news"
-      }
-    }
-  }
+ "$comment": [
+ "The window onto the desk. Alpaca's official MCP server, pointed at the",
+ "competition paper account, so the running system can be interrogated in plain",
+ "English: what is open, what did it refuse, what is the account doing.",
+ "",
+ "It is served through agent/mcp_readonly.py, a stdio proxy that ENFORCES",
+ "read-only rather than assuming it. Alpaca's ALPACA_TOOLSETS filter does not",
+ "remove the order-placing tools - they are built-in overrides, not spec-driven",
+ "operations - so a server started with account,trading,assets,news still exposes",
+ "place_option_order. The proxy strips every mutating tool out of tools/list and",
+ "refuses tools/call for one by name, even if a client never lists first.",
+ "Verified: 11 of 35 tools blocked, 24 reads pass through.",
+ "Run `python -m agent.mcp_readonly --audit` to see the split.",
+ "",
+ "Execution never goes through here. Every order HALFSPREAD places is an Alpaca",
+ "CLI invocation recorded verbatim in data/journal/*.jsonl and replayable by hand,",
+ "and agent/execute.py refuses the competition account without an explicit arming",
+ "token. The CLI is the agent's hands; MCP is the window.",
+ "",
+ "Keys are read from the environment and are never committed - copy .env.example",
+ "to .env and fill it in, or export them in your shell."
+ ],
+ "mcpServers": {
+ "alpaca": {
+ "command": "python",
+ "args": ["-m", "agent.mcp_readonly"],
+ "env": {
+ "ALPACA_API_KEY": "${ALPACA_COMP_API_KEY}",
+ "ALPACA_SECRET_KEY": "${ALPACA_COMP_SECRET_KEY}",
+ "ALPACA_PAPER_TRADE": "true",
+ "ALPACA_TOOLSETS": "account,trading,assets,news"
+ }
+ }
+ }
 }

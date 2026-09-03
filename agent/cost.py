@@ -2,7 +2,7 @@
 
 This module is the thesis. Nothing reaches the broker without a measured
 entry cost and a net-EV number attached, and every candidate also carries
-the exit cost it would incur if it were closed rather than settled — the
+the exit cost it would incur if it were closed rather than settled - the
 cost this agent exists to avoid.
 """
 from __future__ import annotations

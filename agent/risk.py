@@ -121,7 +121,7 @@ def pin_risk(ev_short_strike: float, spot: float, threshold_pct: float = 0.25) -
     """How close the underlying is to the short strike, as a percentage.
 
     Returns (breached, distance_pct). Negative distance means the short
-    strike is already through — the case where settling is no longer free
+    strike is already through - the case where settling is no longer free
     and the position has to be closed into the widest spreads of the day.
     """
     distance_pct = (spot - ev_short_strike) / spot * 100.0
