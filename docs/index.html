@@ -186,6 +186,17 @@ td.m{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13.5px}
   border-bottom:1px solid var(--rule-soft);align-items:baseline}
 .gates li:last-child{border-bottom:none}
 .gates .why{font-family:var(--mono);font-size:11.5px;color:var(--muted);display:block;margin-top:2px}
+
+/* ---------- at a glance ---------- */
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:0;
+  margin:40px 0 0;border-top:1px solid var(--ink);border-bottom:1px solid var(--rule)}
+.glance div{padding:16px 20px 18px;border-right:1px solid var(--rule)}
+.glance div:last-child{border-right:none}
+.glance .n{font-family:var(--mono);font-size:26px;font-weight:600;letter-spacing:-.03em;line-height:1}
+.glance .l{font-size:13.5px;color:var(--ink-2);margin-top:8px;line-height:1.4}
+@media(max-width:640px){.glance div{border-right:none;border-bottom:1px solid var(--rule-soft)}}
+.cmp td:first-child{color:var(--muted);width:44%}
+.cmp td:last-child{color:var(--ink)}
 footer{margin-top:74px;padding-top:22px;border-top:1px solid var(--ink);
   font-size:13.5px;color:var(--muted);line-height:1.65}
 .empty{color:var(--muted);font-family:var(--mono);font-size:13px;padding:26px 0}
@@ -201,6 +212,7 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
   <a href="#try">Price a trade</a>
   <a href="#ledger">Ledger</a>
   <a href="#method">Method</a>
+  <a href="#differs">How it differs</a>
   <a href="#curve">Cost curve</a>
   <a href="#widening">Widening</a>
   <a href="#tails">Tails</a>
@@ -226,6 +238,8 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
     <p class="standfirst">Every premium-selling agent opens a position and later closes it.
       That second trade is where the money goes, and almost nobody prices it. This agent
       measures what execution costs before every order, then declines to pay it twice.</p>
+
+    <div class="glance" id="glance"></div>
 
     <div class="ladder">
       <h2 style="font-size:19px" id="ladtitle">One contract, quoted twice</h2>
@@ -260,6 +274,22 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
       strike, size, price and exit. A language model may shrink a position and may do
       nothing else.</p>
     <div id="methodlist"></div>
+  </section>
+
+  <section id="differs">
+    <h2>Where the model sits</h2>
+    <p class="lede">A language model occupies exactly one node of this system, and its authority
+      runs one way. It can make a position smaller. It cannot make one, enlarge one, choose a
+      strike, or overrule a gate, and the clamp is enforced in code rather than requested in a
+      prompt. If it is unreachable the deterministic decision stands.</p>
+    <figure><div id="boundary"></div>
+      <figcaption>We do not trust a language model with money. We give it the one job humans are
+        worst at automating: reading unstructured event risk off the wire.</figcaption></figure>
+
+    <h2 style="margin-top:44px">Against the usual shape</h2>
+    <p class="lede">Most agents in this field optimise the signal. This one optimises what the
+      trade actually costs.</p>
+    <div class="scroll"><table id="difftable"></table></div>
   </section>
 
   <section id="curve">
@@ -698,6 +728,81 @@ function run(nAdm,nAll){
   $("#trynote").textContent=q.join(" ");
 }
 
+
+/* ---------------- at a glance ---------------- */
+function renderGlance(d){
+  const f=(d.verification&&d.verification.facts)||{}, L=d.ledger||{}, A=d.account||{},
+        st=d.spread_story||{}, C=d.counts||{};
+  const open=(C.fills||0)-(L.positions_resolved||0);
+  const items=[
+    [f.cost_curve_ratio?f.cost_curve_ratio+"x":"--",
+     "costlier to cross at the strike a delta screen picks than at the money"],
+    [st.times_wider?st.times_wider+"x":"--",
+     "costlier to leave one held contract now than at the opening bell"],
+    [money(L.exit_cost_paid||0),
+     open>0?`exit spread paid, against ${money(L.exit_cost_at_stake||0)} still at stake`
+           :"exit spread paid across every position"],
+    [((d.verification||{}).passed||0)+"/"+((d.verification||{}).total||0),
+     "published claims that reproduce from the journal alone"],
+  ];
+  $("#glance").innerHTML=items.map(([n,l])=>
+    `<div><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+}
+
+/* ---------------- where the model sits ---------------- */
+function renderBoundary(){
+  const w=1000,h=250;
+  const box=(x,y,bw,bh,label,sub,stroke,dash)=>
+    `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="none"
+       stroke="${stroke}" stroke-width="1.5"${dash?' stroke-dasharray="4 3"':''}/>
+     <text class="lb" x="${x+bw/2}" y="${y+(sub?bh/2-3:bh/2+4)}" text-anchor="middle"
+       fill="var(--ink)" style="font-size:12.5px">${label}</text>
+     ${sub?`<text class="lb" x="${x+bw/2}" y="${y+bh/2+14}" text-anchor="middle"
+       style="font-size:10.5px">${sub}</text>`:""}`;
+  const arrow=(x1,y1,x2,y2,label,col)=>
+    `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="1.5"
+       marker-end="url(#ah)"/>
+     ${label?`<text class="lb" x="${(x1+x2)/2}" y="${y1-8}" text-anchor="middle">${label}</text>`:""}`;
+  let s=`<svg viewBox="0 0 ${w} ${h}" role="img"
+    aria-label="The language model can only reduce position size; everything else is deterministic">
+    <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6"
+      orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>`;
+  s+=box(20,86,250,62,"Deterministic engine","strike, width, size, price, exit","var(--ink)");
+  s+=arrow(270,117,352,117,"proposed position","var(--muted)");
+  s+=box(352,86,206,62,"AI event review","reads live headlines","var(--measure)");
+  s+=arrow(558,117,660,117,"","var(--muted)");
+  s+=`<text class="lb" x="609" y="109" text-anchor="middle" fill="var(--measure)">clamped in code</text>`;
+  s+=box(660,86,150,62,"Size","scaled down, or unchanged","var(--ink)");
+  s+=arrow(810,117,900,117,"","var(--muted)");
+  s+=box(900,96,80,42,"Order","","var(--ink)");
+  const blocked=[["cannot enlarge a position",34],["cannot choose a strike",56],
+                 ["cannot overrule a gate",78]];
+  blocked.forEach(([t,y])=>{
+    s+=`<line x1="455" y1="86" x2="455" y2="${y+6}" stroke="var(--ask)" stroke-width="1"
+         stroke-dasharray="3 3"/>
+        <text class="lb" x="470" y="${y+9}" fill="var(--ask)">${t}</text>`;
+  });
+  s+=`<line x1="455" y1="148" x2="455" y2="196" stroke="var(--bid)" stroke-width="1" stroke-dasharray="3 3"/>
+      <text class="lb" x="470" y="200" fill="var(--bid)">unreachable, and the deterministic decision stands</text>`;
+  s+=`</svg>`;
+  $("#boundary").innerHTML=s;
+}
+
+const DIFF=[
+ ["Optimise the signal","Optimise what the trade costs"],
+ ["Price at mid","Price at what you can actually fill"],
+ ["Exit on a trigger or a stop","Exit on arithmetic, or not at all"],
+ ["Lognormal risk model","Model and measured sessions, worse of the two"],
+ ["The model decides","The model may only shrink; code decides"],
+ ["Log the fills","Log every refusal and every correction"],
+ ["Report a number","Publish a journal anyone can re-derive it from"],
+];
+function renderDiff(){
+  $("#difftable").innerHTML=
+    `<thead><tr><th>Most agents in this field</th><th>HALFSPREAD</th></tr></thead>
+     <tbody class="cmp">${DIFF.map(([a,b])=>`<tr><td>${a}</td><td>${b}</td></tr>`).join("")}</tbody>`;
+}
+
 function spy(){
   const links=[...document.querySelectorAll("nav a")];
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;
@@ -706,14 +811,14 @@ function spy(){
   document.querySelectorAll("section[id]").forEach(s=>io.observe(s));
 }
 
-renderMethod(); renderRefs(); renderStack();
+renderMethod(); renderRefs(); renderStack(); renderBoundary(); renderDiff();
 fetch("data.json?t="+Date.now()).then(r=>r.json()).then(d=>{
   $("#acct").textContent=(d.account&&d.account.account_number)||"paper";
   $("#eq").textContent=(d.account&&d.account.equity)?money(d.account.equity):"";
   $("#gen").textContent=(d.generated_at||"").replace("T"," ").replace("+00:00"," UTC");
   $("#live").innerHTML='<span class="beat"></span>'+((d.counts&&d.counts.journal_records)||0).toLocaleString()+" journal records";
   $("#feed").textContent=d.feed_note||"";
-  renderLadder(d); tryInit(d); renderLedger(d); renderCurve(d);
+  renderGlance(d); renderLadder(d); tryInit(d); renderLedger(d); renderCurve(d);
   renderWidening(d); renderEmpirical(d); renderVerify(d); renderLog(d);
   spy();
 }).catch(e=>{

@@ -54,6 +54,24 @@ def _median(vals: list[float]) -> float | None:
     return s[len(s) // 2]
 
 
+def count_refusals(records: list[dict]) -> list[dict]:
+    """One definition of a refusal, shared by the verifier, the dashboard and
+    the README, so the three cannot disagree about the same journal.
+
+    A refusal is any point at which a cycle declined to put an order on:
+    no admissible candidate, sizing withheld approval, or the monitor chose to
+    hold through a breach rather than pay to leave.
+    """
+    out = []
+    for r in records:
+        k = r.get("kind")
+        if k in ("no_trade", "hold_through_breach", "order_abandoned"):
+            out.append(r)
+        elif k == "sizing" and not r.get("approved", True):
+            out.append(r)
+    return out
+
+
 def run() -> tuple[Check, dict]:
     records = journal.read_all()
     c = Check()
@@ -146,7 +164,7 @@ def run() -> tuple[Check, dict]:
           if widened else "Not enough observations recorded yet.")
 
     # ---- 6. refusals are recorded, not just fills ----------------------------
-    refusals = [r for r in records if r.get("kind") in ("no_trade", "hold_through_breach")]
+    refusals = count_refusals(records)
     vetoes = [r for r in records if r.get("kind") == "veto" and r.get("action") != "proceed"]
     facts["refusals"] = len(refusals)
     facts["vetoes"] = len(vetoes)
