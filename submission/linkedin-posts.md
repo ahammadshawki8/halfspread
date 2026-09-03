@@ -6,7 +6,14 @@ Every number below is real and is reproducible from the journal in the repositor
 has moved by the time you post, run `python -m agent.publish` and read the current one off the
 README, or check the live page. Do not post a number you have not checked.
 
-Tag **@lablab.ai** and **@Alpaca** on each. Post them a few hours apart rather than all at once.
+**Every post tags the hackathon.** Type `@Alpaca` and `@lablab.ai` and pick the organisation from
+LinkedIn's dropdown rather than typing the text by hand, otherwise it posts as plain text and
+neither page gets notified. `#AlpacaHackathon` is on all five so the whole set can be found
+together.
+
+Post them a few hours apart rather than all at once.
+
+On X the equivalents are **@AlpacaHQ** and **@lablabai**.
 
 ---
 
@@ -32,7 +39,9 @@ Tag **@lablab.ai** and **@Alpaca** on each. Post them a few hours apart rather t
 > structures by what is left after that cost, and then refuse to pay it a second time by letting
 > positions settle instead of closing them.
 >
-> #Options #QuantitativeFinance #AlgorithmicTrading #BuildInPublic
+> Built on @Alpaca paper trading for the AI Trading Agents hackathon run by @lablab.ai.
+>
+> #AlpacaHackathon #Options #QuantitativeFinance #AlgorithmicTrading #BuildInPublic
 
 ---
 
@@ -60,7 +69,9 @@ Tag **@lablab.ai** and **@Alpaca** on each. Post them a few hours apart rather t
 > If you are building anything that reports its own performance, I would genuinely recommend
 > that second one. It is not hard to write and it changes how you feel about your own numbers.
 >
-> #BuildInPublic #SoftwareEngineering #FinTech #DataIntegrity
+> Part of what I am building on @Alpaca for the @lablab.ai AI Trading Agents hackathon.
+>
+> #AlpacaHackathon #BuildInPublic #SoftwareEngineering #FinTech #DataIntegrity
 
 ---
 
@@ -91,7 +102,9 @@ Tag **@lablab.ai** and **@Alpaca** on each. Post them a few hours apart rather t
 > I am not sure "give the LLM less to do" is the popular position right now. I am fairly sure it
 > is the right one when there is money involved.
 >
-> #AI #LLM #RiskManagement #FinTech #AlgorithmicTrading
+> Running live on @Alpaca paper for the @lablab.ai AI Trading Agents hackathon.
+>
+> #AlpacaHackathon #AI #LLM #RiskManagement #AlgorithmicTrading
 
 ---
 
@@ -118,9 +131,9 @@ Tag **@lablab.ai** and **@Alpaca** on each. Post them a few hours apart rather t
 >
 > Most combinations get rejected. That is the point of it.
 >
-> Built for the Alpaca AI Trading Agents hackathon with @lablab.ai and @Alpaca.
+> Built for the AI Trading Agents hackathon run by @lablab.ai and @Alpaca, and still trading.
 >
-> #AlgorithmicTrading #Options #Hackathon #FinTech #BuildInPublic
+> #AlpacaHackathon #AlgorithmicTrading #Options #FinTech #BuildInPublic
 
 ---
 
@@ -149,7 +162,9 @@ Tag **@lablab.ai** and **@Alpaca** on each. Post them a few hours apart rather t
 > have made from the committed journal, with no keys and no network. If any of them stops
 > reproducing it exits non-zero.
 >
-> #OpenSource #Python #QuantitativeFinance #SoftwareEngineering #BuildInPublic
+> Built on @Alpaca for the @lablab.ai AI Trading Agents hackathon.
+>
+> #AlpacaHackathon #OpenSource #Python #QuantitativeFinance #BuildInPublic
 
 ---
 
@@ -164,6 +179,16 @@ Tag **@lablab.ai** and **@Alpaca** on each. Post them a few hours apart rather t
 Posters are generated from `assets/poster-cost.html` and `assets/poster-leash.html`. To refresh
 them with newer numbers, edit the figures in those files, serve the folder
 (`python -m http.server 8777`) and screenshot at 1200x630.
+
+## Where to put the hackathon page
+
+Posts 1, 2 and 3 carry no URL on purpose: LinkedIn suppresses reach on anything with an external
+link, and those three are the ones most likely to travel. Put the hackathon page in the **first
+comment** on each instead, which costs nothing and still gets people there:
+
+> Built for this: https://lablab.ai/event/alpaca-ai-trading-agents-hackathon
+
+Posts 4 and 5 carry their link in the body because the link *is* the point of those two.
 
 ## A note on order
 
