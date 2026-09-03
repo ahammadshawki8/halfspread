@@ -8,6 +8,7 @@
 <meta name="description" content="An autonomous options agent that measures what execution costs before every order, and never pays that cost twice.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="engine.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -154,6 +155,37 @@ td.m{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13.5px}
 .note{border-left:2px solid var(--measure);background:var(--measure-wash);
   padding:15px 18px;font-size:14.5px;color:var(--ink-2);margin-top:26px;line-height:1.55;
   border-radius:0 3px 3px 0}
+
+/* ---------- the desk you can operate ---------- */
+.controls{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;
+  padding:18px;border:1px solid var(--rule);border-bottom:none;background:var(--card);border-radius:3px 3px 0 0}
+.ctl{display:flex;flex-direction:column;gap:5px}
+.ctl label{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.ctl select{font-family:var(--mono);font-size:14px;padding:7px 9px;border:1px solid var(--rule);
+  background:var(--paper);color:var(--ink);border-radius:2px;min-width:96px}
+.ctl select:hover{border-color:var(--muted)}
+.best{font-family:var(--mono);font-size:12px;padding:9px 14px;border:1px solid var(--ink);
+  background:transparent;color:var(--ink);border-radius:2px;cursor:pointer}
+.best:hover{background:var(--ink);color:var(--paper)}
+.result{border:1px solid var(--rule);border-radius:0 0 3px 3px;background:var(--card);padding:0}
+.verdict-bar{padding:15px 18px;border-bottom:1px solid var(--rule);display:flex;
+  align-items:baseline;gap:14px;flex-wrap:wrap}
+.verdict-bar .v{font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:.02em}
+.verdict-bar .sub{font-size:14.5px;color:var(--ink-2)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.grid2>div{padding:18px}
+.grid2>div+div{border-left:1px solid var(--rule)}
+@media(max-width:760px){.grid2>div+div{border-left:none;border-top:1px solid var(--rule)}}
+.kv{display:grid;grid-template-columns:1fr auto;gap:7px 16px;font-size:14.5px;align-items:baseline}
+.kv dt{color:var(--ink-2)}
+.kv dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;font-size:14px}
+.kv .note{grid-column:1/-1;font-size:12.5px;color:var(--muted);margin:-3px 0 6px;line-height:1.45}
+.gates{list-style:none;margin:0;padding:0;font-size:14px}
+.gates li{display:grid;grid-template-columns:52px 1fr;gap:10px;padding:7px 0;
+  border-bottom:1px solid var(--rule-soft);align-items:baseline}
+.gates li:last-child{border-bottom:none}
+.gates .why{font-family:var(--mono);font-size:11.5px;color:var(--muted);display:block;margin-top:2px}
 footer{margin-top:74px;padding-top:22px;border-top:1px solid var(--ink);
   font-size:13.5px;color:var(--muted);line-height:1.65}
 .empty{color:var(--muted);font-family:var(--mono);font-size:13px;padding:26px 0}
@@ -166,6 +198,7 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
 <nav aria-label="Sections">
   <b>HALFSPREAD</b>
   <a href="#finding">The finding</a>
+  <a href="#try">Price a trade</a>
   <a href="#ledger">Ledger</a>
   <a href="#method">Method</a>
   <a href="#curve">Cost curve</a>
@@ -200,6 +233,18 @@ code{font-family:var(--mono);font-size:.86em;background:var(--rule-soft);padding
       <div id="ladder"></div>
       <div class="verdict" id="ladverdict"></div>
     </div>
+  </section>
+
+
+  <section id="try">
+    <h2>Price a trade yourself</h2>
+    <p class="lede">This is the desk's own engine, not a description of it. Pick a strike and a
+      width against the live chain and it runs the same arithmetic and the same gates the agent
+      applied to its own orders, in your browser. Most combinations are rejected. That is the
+      point of it.</p>
+    <div class="controls" id="controls"></div>
+    <div class="result" id="tryresult"></div>
+    <p class="hint" id="trynote"></p>
   </section>
 
   <section id="ledger">
@@ -546,6 +591,111 @@ function renderLog(d){
     <td>${esc(r.detail)}</td></tr>`).join("");
 }
 
+
+/* ---------------- the desk you can operate ---------------- */
+let TRY=null;
+const WIDTHS={SPY:[1,2,3,5],XSP:[1,2,3,5],SPXW:[5,10,15,25]};
+
+function tryInit(d){
+  const chains=d.chains||{}, unders=Object.keys(chains);
+  if(!unders.length||!window.HS){
+    $("#controls").innerHTML='<div class="empty">Live chain not available right now.</div>';
+    return;
+  }
+  TRY={d,chains};
+  const u=unders.includes("SPY")?"SPY":unders[0];
+  $("#controls").innerHTML=
+    sel("u","underlying",unders,u)+
+    '<div class="ctl" id="wexp"></div>'+
+    '<div class="ctl" id="wstrike"></div>'+
+    '<div class="ctl" id="wwidth"></div>'+
+    '<button class="best" id="bestbtn" type="button">Find the best one</button>';
+  $("#u").onchange=()=>{fillExpiry();fillStrike();run();};
+  $("#bestbtn").onclick=findBest;
+  fillExpiry(); fillStrike(); run();
+}
+function sel(id,label,opts,cur){
+  return `<div class="ctl"><label for="${id}">${label}</label>
+    <select id="${id}">${opts.map(o=>`<option${String(o)===String(cur)?" selected":""}>${o}</option>`).join("")}</select></div>`;
+}
+function fillExpiry(){
+  const u=$("#u").value, exps=Object.keys(TRY.chains[u]||{}).sort();
+  $("#wexp").innerHTML=`<label for="e">expiry</label>
+    <select id="e">${exps.map(x=>`<option>${x}</option>`).join("")}</select>`;
+  $("#e").onchange=()=>{fillStrike();run();};
+}
+function fillStrike(){
+  const u=$("#u").value, e=$("#e").value, c=TRY.chains[u][e];
+  if(!c) return;
+  const otm=c.puts.filter(p=>p.k<c.spot).map(p=>p.k).sort((a,b)=>b-a);
+  const pick=otm[Math.min(3,otm.length-1)];
+  $("#wstrike").innerHTML=`<label for="k">short strike</label>
+    <select id="k">${otm.map(k=>`<option${k===pick?" selected":""}>${k}</option>`).join("")}</select>`;
+  const ws=WIDTHS[u]||[1,2,3,5];
+  $("#wwidth").innerHTML=`<label for="w">width</label>
+    <select id="w">${ws.map(w=>`<option${w===ws[1]?" selected":""}>${w}</option>`).join("")}</select>`;
+  $("#k").onchange=run; $("#w").onchange=run;
+}
+function findBest(){
+  const u=$("#u").value,e=$("#e").value,c=TRY.chains[u][e],d=TRY.d;
+  const all=HS.rankAll(c,d.gates,d.empirical_samples,e,WIDTHS[u]||[1,2,3,5],Date.parse(c.ts));
+  const win=all.find(r=>r.admissible)||all[0];
+  if(!win){run();return;}
+  $("#k").value=String(win.shortK); $("#w").value=String(win.width);
+  run(all.filter(r=>r.admissible).length,all.length);
+}
+function run(nAdm,nAll){
+  const u=$("#u").value,e=$("#e").value,c=TRY.chains[u][e],d=TRY.d;
+  if(!c||!$("#k")) return;
+  const r=HS.priceSpread(c,Number($("#k").value),Number($("#w").value),
+                         d.gates,d.empirical_samples,e,null,Date.parse(c.ts));
+  const box=$("#tryresult");
+  if(!r.ok){box.innerHTML=`<div class="verdict-bar"><span class="v down">cannot price</span>
+    <span class="sub">${esc(r.why)}</span></div>`;return;}
+
+  const verdict=r.admissible
+    ? `<span class="v up">would trade ${r.suggestedQty} contract${r.suggestedQty>1?"s":""}</span>
+       <span class="sub">risking ${money(r.totalRisk)} to make ${money(r.suggestedQty*r.maxProfit)},
+       with ${money(r.totalNetEv)} of expected value after the cost of getting in.</span>`
+    : `<span class="v down">rejected</span>
+       <span class="sub">${r.failed.length} gate${r.failed.length>1?"s":""} failed. The desk
+       would not send this order.</span>`;
+
+  box.innerHTML=`<div class="verdict-bar">${verdict}</div>
+    <div class="grid2">
+      <div>
+        <dl class="kv">
+          <div class="note">What the screen shows, against what you would actually get.</div>
+          <dt>Credit at mid</dt><dd>${r.creditMid.toFixed(3)}</dd>
+          <dt>Credit you can fill</dt><dd>${r.creditFill.toFixed(3)}</dd>
+          <dt>Cost of crossing in</dt><dd class="meas">${money(r.entryCost)}</dd>
+          <dt>Cost of leaving, now</dt><dd class="meas">${money(r.exitCostNow)}</dd>
+          <div class="note" style="margin-top:10px">Outcome if it is held to settlement.</div>
+          <dt>Most you can make</dt><dd class="up">${money(r.maxProfit)}</dd>
+          <dt>Most you can lose</dt><dd class="down">${money(r.maxLoss)}</dd>
+          <dt>Chance it expires clear</dt><dd>${(r.probWin*100).toFixed(1)}%</dd>
+          <div class="note">Model says ${(r.modelWin*100).toFixed(1)}%${
+            r.empiricalWin!=null?`, ${r.empiricalN} measured sessions say ${(r.empiricalWin*100).toFixed(1)}%. Bound by the ${r.boundBy}.`:"."}</div>
+          <dt>Expected value, net</dt><dd class="${r.netEv>0?"up":"down"}">${money(r.netEv)}</dd>
+          <div class="note">Priced at mid it would look like ${money(r.netEvAtMid)}. The
+            difference is the spread, and it is the whole argument.</div>
+        </dl>
+      </div>
+      <div>
+        <ul class="gates">${r.checks.map(([name,ok,why])=>`<li>
+          <span class="tag ${ok?"pass":"fail"}">${ok?"pass":"fail"}</span>
+          <span>${name}<span class="why">${esc(why)}</span></span></li>`).join("")}</ul>
+      </div>
+    </div>`;
+
+  const q=[`${u} ${r.shortK}/${r.longK}, ${r.hoursToExpiry.toFixed(1)} hours to expiry.`,
+    `Short leg quoted ${r.shortQuote.b.toFixed(2)} bid against ${r.shortQuote.a.toFixed(2)} ask,`,
+    `implied volatility ${(r.iv*100).toFixed(1)}%, delta ${r.delta.toFixed(3)}.`,
+    `Chain snapshot taken ${c.ts.slice(11,16)} UTC.`];
+  if(nAll) q.push(`Searched ${nAll} combinations; ${nAdm} cleared every gate.`);
+  $("#trynote").textContent=q.join(" ");
+}
+
 function spy(){
   const links=[...document.querySelectorAll("nav a")];
   const io=new IntersectionObserver(es=>{es.forEach(e=>{if(!e.isIntersecting)return;
@@ -561,7 +711,7 @@ fetch("data.json?t="+Date.now()).then(r=>r.json()).then(d=>{
   $("#gen").textContent=(d.generated_at||"").replace("T"," ").replace("+00:00"," UTC");
   $("#live").innerHTML='<span class="beat"></span>'+((d.counts&&d.counts.journal_records)||0).toLocaleString()+" journal records";
   $("#feed").textContent=d.feed_note||"";
-  renderLadder(d); renderLedger(d); renderCurve(d);
+  renderLadder(d); tryInit(d); renderLedger(d); renderCurve(d);
   renderWidening(d); renderEmpirical(d); renderVerify(d); renderLog(d);
   spy();
 }).catch(e=>{
