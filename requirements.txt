@@ -1,0 +1,2 @@
+# HALFSPREAD runs on the Python standard library only.
+# Listed for tooling that expects the file to exist.
