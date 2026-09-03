@@ -1,0 +1,1 @@
+"""HALFSPREAD trading agent."""
