@@ -399,6 +399,8 @@ function renderLedger(d){
     cell("Account",money(pnl),
       openNow>0?`Mark to market with ${openNow} position${openNow>1?"s":""} still open. Settles at expiry.`
                :`Against a $${(A.starting_equity||100000).toLocaleString()} start.`,dir(pnl),true)+
+    cell("Credit received",money(L.credit_received),
+      `Collected across ${L.orders_filled||0} filled order${(L.orders_filled||0)===1?"":"s"}, confirmed against the broker.`,"up")+
     cell("Entry cost paid",money(L.entry_cost_paid),
       "Measured on every leg before the order was sent.","meas")+
     (openNow>0

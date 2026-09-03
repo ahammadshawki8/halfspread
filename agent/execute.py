@@ -243,11 +243,62 @@ def submit(
                "filled_avg_price": l.get("filled_avg_price")}
               for l in (raw.get("legs") or [])],
     )
+
+    # Follow it to a terminal state so the record shows what actually happened
+    # rather than only what was asked for.
+    if result.order_id:
+        confirm_fill(result.order_id, profile)
+
     return result
 
 
 def get_order(order_id: str, profile: str = config.PROFILE_DEV) -> dict:
     return cli.run("order", "get", "--order-id", order_id, profile=profile)
+
+
+def confirm_fill(order_id: str, profile: str, attempts: int = 6, pause: float = 2.0) -> dict:
+    """Follow an order to a terminal state and journal what actually happened.
+
+    Submitting returns `pending_new` with nothing filled, so a journal that
+    stops at the acknowledgement records every order as unfilled. Anyone
+    reading it later, including us, would conclude the desk never traded.
+    """
+    import time as _time
+
+    terminal = {"filled", "canceled", "expired", "rejected", "done_for_day"}
+    raw: dict = {}
+    for i in range(attempts):
+        try:
+            raw = get_order(order_id, profile=profile) or {}
+        except Exception as exc:
+            journal.write("fill_check_failed", order_id=order_id, profile=profile,
+                          attempt=i + 1, error=str(exc))
+            return {}
+        if str(raw.get("status", "")).lower() in terminal:
+            break
+        _time.sleep(pause)
+
+    legs = [
+        {"symbol": l.get("symbol"), "side": l.get("side"), "status": l.get("status"),
+         "filled_qty": l.get("filled_qty"),
+         "filled_avg_price": l.get("filled_avg_price")}
+        for l in (raw.get("legs") or [])
+    ]
+    filled_price = raw.get("filled_avg_price")
+    record = {
+        "order_id": order_id,
+        "profile": profile,
+        "status": raw.get("status"),
+        "filled_qty": float(raw.get("filled_qty") or 0),
+        # Alpaca signs an mleg fill from the package's point of view, so a
+        # credit comes back negative. Store both so nothing has to be
+        # re-derived from a sign convention later.
+        "filled_avg_price": float(filled_price) if filled_price else None,
+        "credit_received": abs(float(filled_price)) if filled_price else None,
+        "legs": legs,
+    }
+    journal.write("order_filled", **record)
+    return record
 
 
 def cancel(order_id: str, profile: str = config.PROFILE_DEV) -> dict:

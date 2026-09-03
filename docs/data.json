@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-09-03T15:34:11+00:00",
+  "generated_at": "2026-09-03T15:38:30+00:00",
   "verification": {
-    "passed": 9,
-    "total": 9,
+    "passed": 10,
+    "total": 10,
     "failed": 0,
     "rows": [
       {
         "ok": true,
         "claim": "The journal exists and is readable.",
-        "evidence": "2302 records across 1 file(s)."
+        "evidence": "2318 records across 1 file(s)."
       },
       {
         "ok": true,
@@ -19,6 +19,11 @@
         "ok": true,
         "claim": "Every order was re-priced from fresh quotes immediately before submission.",
         "evidence": "3/3 carry a re-quote; largest decision-to-execution drift 7.00 $/contract."
+      },
+      {
+        "ok": true,
+        "claim": "Every order was followed to a terminal state, not just acknowledged.",
+        "evidence": "3/3 submissions carry a terminal fill record; 3 reached a settled status; $69.00 of credit received in total."
       },
       {
         "ok": true,
@@ -52,10 +57,12 @@
       }
     ],
     "facts": {
-      "journal_records": 2302,
+      "journal_records": 2318,
       "orders": 3,
       "requoted": 3,
       "max_abs_drift": 7.0,
+      "orders_filled": 3,
+      "credit_received": 69.0,
       "half_spread_atm_pct": 1.099,
       "half_spread_far_pct": 14.286,
       "cost_curve_ratio": 13.0,
@@ -144,12 +151,12 @@
   },
   "account_id": "0509a308-f1ef-44e2-8e8b-8a6d0893f84b",
   "account": {
-    "account_number": "PA3WUMDUSE9N",
-    "equity": 100133.25,
-    "cash": 100170.25,
+    "account_number": "PA31RB6YR1V6",
+    "equity": 100007.65,
+    "cash": 100066.65,
     "options_level": 3,
     "starting_equity": 100000.0,
-    "pnl": 133.25
+    "pnl": 7.65
   },
   "ledger": {
     "positions_resolved": 0,
@@ -158,14 +165,16 @@
     "wins": 0,
     "win_rate": null,
     "realized_pnl": 0,
-    "entry_cost_paid": 20.0,
+    "entry_cost_paid": 7.0,
     "exit_cost_paid": 0,
     "exit_cost_avoided_by_settling": 0,
     "realized_pnl_if_round_tripped": 0,
     "advantage_from_not_exiting": 0,
-    "account_equity": 100133.25,
-    "exit_cost_at_stake": 38.0,
-    "open_positions_priced": 5
+    "account_equity": 100008.65,
+    "exit_cost_at_stake": 10.0,
+    "open_positions_priced": 3,
+    "credit_received": 69.0,
+    "orders_filled": 3
   },
   "scan_totals": {
     "scans": 104,
@@ -173,13 +182,13 @@
     "candidates_admissible": 506
   },
   "counts": {
-    "orders": 5,
-    "fills": 4,
+    "orders": 3,
+    "fills": 3,
     "settlements": 0,
     "emergency_closes": 0,
     "vetoes": 4,
     "refusals": 11,
-    "journal_records": 2299
+    "journal_records": 2315
   },
   "spread_story": {
     "symbol": "SPY 765 put",
@@ -5147,6 +5156,12 @@
   },
   "decisions": [
     {
+      "ts": "2026-09-03T14:47:45.357+00:00",
+      "type": "trade",
+      "what": "SPY 00759000/00778000",
+      "detail": "1x credit 0.21 entry cost $2.00 (8.7% of credit), max loss $279"
+    },
+    {
       "ts": "2026-09-03T14:47:44.237+00:00",
       "type": "veto",
       "what": "veto: reduce x0.5",
@@ -5165,10 +5180,16 @@
       "detail": "settle() compared only expiry DATE against today, so contracts expiring today were resolved while the market was still open and hours from expiry. It booked P&L that did not exist (a fabricated $316 across 6 'settled' positions, several of them DEV orders miscounted against COMP because open_spreads() did not filter the journal by profile). Both bugs are fixed: same-day expiries now additionally require the market to be closed, and open_spreads()/report() are profile-scoped. These records are removed rather than kept because they were never valid observations of anything."
     },
     {
-      "ts": "2026-09-03T13:41:56.626+00:00",
+      "ts": "2026-09-03T13:57:02.163+00:00",
       "type": "trade",
-      "what": "XSP 00766000/00763000",
-      "detail": "3x credit 0.13 entry cost $1.00 (7.1% of credit), max loss $287"
+      "what": "XSP 00767000/00764000",
+      "detail": "2x credit 0.16 entry cost $1.00 (5.9% of credit), max loss $284"
+    },
+    {
+      "ts": "2026-09-03T13:41:44.861+00:00",
+      "type": "trade",
+      "what": "SPY 00765000/00763000",
+      "detail": "3x credit 0.13 entry cost $1.00 (7.1% of credit), max loss $187"
     },
     {
       "ts": "2026-09-03T13:39:50.081+00:00",
@@ -5181,30 +5202,6 @@
       "type": "veto",
       "what": "veto: block x0.0",
       "detail": "Escalating US-Iran geopolitical tensions and surging oil prices create high risk of sharp downside moves today. ['US-Iran Tensions Escalate', 'Oil Surges', 'Strait of Hormuz Attacks']"
-    },
-    {
-      "ts": "2026-09-03T13:37:40.453+00:00",
-      "type": "trade",
-      "what": "SPY 00762000/00760000",
-      "detail": "5x credit 0.07 entry cost $1.00 (12.5% of credit), max loss $193"
-    },
-    {
-      "ts": "2026-09-03T13:34:36.526+00:00",
-      "type": "trade",
-      "what": "SPY 00764000/00762000",
-      "detail": "5x credit 0.13 entry cost $1.00 (7.1% of credit), max loss $187"
-    },
-    {
-      "ts": "2026-09-03T13:33:23.413+00:00",
-      "type": "trade",
-      "what": "SPY 00765000/00760000",
-      "detail": "2x credit 0.29 entry cost $1.00 (3.3% of credit), max loss $471"
-    },
-    {
-      "ts": "2026-09-03T13:32:07.046+00:00",
-      "type": "trade",
-      "what": "SPY 00764000/00762000",
-      "detail": "5x credit 0.16 entry cost $1.00 (5.9% of credit), max loss $184"
     },
     {
       "ts": "2026-09-03T10:08:23.999+00:00",

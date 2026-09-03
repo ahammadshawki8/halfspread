@@ -71,6 +71,13 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
     ledger["exit_cost_at_stake"] = round(sum(latest_close_cost.values()), 2)
     ledger["open_positions_priced"] = len(latest_close_cost)
 
+    fills = {r.get("order_id"): r for r in records
+             if r.get("kind") == "order_filled" and _mine(r)}
+    ledger["credit_received"] = round(
+        sum(_f(r.get("credit_received")) * _f(r.get("filled_qty")) * 100
+            for r in fills.values()), 2)
+    ledger["orders_filled"] = len(fills)
+
     # ---- cost curve: the most recent observation per underlying ----------
     curves: dict[str, dict] = {}
     for r in records:

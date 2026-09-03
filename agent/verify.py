@@ -83,7 +83,26 @@ def run() -> tuple[Check, dict]:
           f"{len(requoted)}/{len(intents)} carry a re-quote; largest decision-to-execution "
           f"drift {facts['max_abs_drift']:.2f} $/contract.")
 
-    # ---- 3. the cost curve rises as strikes go out of the money --------------
+    # ---- 3. every order was followed to a terminal state ---------------------
+    fills = {r.get("order_id"): r for r in records
+             if r.get("kind") == "order_filled" and r.get("profile") == COMP}
+    submitted_ids = {r.get("order_id") for r in records
+                     if r.get("kind") == "order_submitted" and r.get("profile") == COMP
+                     and r.get("order_id")}
+    settled_states = [r for r in fills.values()
+                      if str(r.get("status", "")).lower() in
+                      ("filled", "canceled", "expired", "rejected", "done_for_day")]
+    credit_total = sum(_f(r.get("credit_received")) * _f(r.get("filled_qty")) * 100
+                       for r in fills.values())
+    facts["orders_filled"] = len(settled_states)
+    facts["credit_received"] = round(credit_total, 2)
+    c.add(bool(submitted_ids) and submitted_ids <= set(fills),
+          "Every order was followed to a terminal state, not just acknowledged.",
+          f"{len(fills)}/{len(submitted_ids)} submissions carry a terminal fill record; "
+          f"{len(settled_states)} reached a settled status; "
+          f"${credit_total:.2f} of credit received in total.")
+
+    # ---- 4. the cost curve rises as strikes go out of the money --------------
     obs = [r for r in records if r.get("kind") == "observation" and r.get("underlying") == "SPY"]
     atm, far = [], []
     for r in obs:
@@ -105,7 +124,7 @@ def run() -> tuple[Check, dict]:
           f"SPY median half-spread {m_atm:.2f}% of mid at the money vs {m_far:.2f}% at 2-3% OTM"
           + (f" ({facts.get('cost_curve_ratio')}x)." if m_atm else "."))
 
-    # ---- 4. spreads widen through the session --------------------------------
+    # ---- 5. spreads widen through the session --------------------------------
     by_under: dict[str, list[tuple[str, float]]] = defaultdict(list)
     for r in obs:
         vals = [p["half_spread_pct"] for p in r.get("rows", [])
@@ -126,7 +145,7 @@ def run() -> tuple[Check, dict]:
           f"ended at {widened}x its first reading."
           if widened else "Not enough observations recorded yet.")
 
-    # ---- 5. refusals are recorded, not just fills ----------------------------
+    # ---- 6. refusals are recorded, not just fills ----------------------------
     refusals = [r for r in records if r.get("kind") in ("no_trade", "hold_through_breach")]
     vetoes = [r for r in records if r.get("kind") == "veto" and r.get("action") != "proceed"]
     facts["refusals"] = len(refusals)
@@ -135,7 +154,7 @@ def run() -> tuple[Check, dict]:
           "Decisions not to trade are journalled with a specific reason.",
           f"{len(refusals)} refusals and {len(vetoes)} non-trivial risk-review outcomes recorded.")
 
-    # ---- 6. settlements paid no exit spread ----------------------------------
+    # ---- 7. settlements paid no exit spread ----------------------------------
     settlements = [r for r in records
                    if r.get("kind") == "settlement" and r.get("profile") == COMP]
     exit_paid = sum(_f(r.get("exit_cost_paid")) for r in settlements)
@@ -153,7 +172,7 @@ def run() -> tuple[Check, dict]:
         c.add(True, "No positions have settled yet, so no settlement claim is made.",
               "0 settlements in the journal.")
 
-    # ---- 7. the empirical distribution is real -------------------------------
+    # ---- 8. the empirical distribution is real -------------------------------
     from . import empirical
     emp = empirical.load()
     if emp:
@@ -167,7 +186,7 @@ def run() -> tuple[Check, dict]:
         c.add(False, "Empirical distribution cache is present.",
               "data/empirical/spy_intraday.json missing; run python -m agent.empirical --rebuild.")
 
-    # ---- 8. corrections are on the record ------------------------------------
+    # ---- 9. corrections are on the record ------------------------------------
     corrections = [r for r in records if r.get("kind") == "journal_correction"]
     facts["corrections"] = len(corrections)
     c.add(True, "Corrections to the journal are themselves journalled.",

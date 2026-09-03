@@ -1,0 +1,12 @@
+# The journal is append-only. A local session and the CI runner both append on
+# the same day, and the correct resolution is always to keep both sets of lines
+# rather than pick a side.
+data/journal/*.jsonl merge=union
+
+# Keep line endings stable between the Windows workstation and the Linux runner.
+*.py   text eol=lf
+*.md   text eol=lf
+*.json text eol=lf
+*.yml  text eol=lf
+*.js   text eol=lf
+*.html text eol=lf
