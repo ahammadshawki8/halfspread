@@ -127,8 +127,11 @@ def main(argv: list[str] | None = None) -> int:
     threads = [
         threading.Thread(target=_observer_thread,
                          args=(expiry, args.profile, args.observe_interval), daemon=True),
+        # The observer watches one expiry; the agent must stay free to pick its
+        # own, otherwise pinning the session's expiry silently overrides the
+        # ranking and the agent only ever sees today's contracts.
         threading.Thread(target=_agent_thread,
-                         args=(args.profile, expiry, args.agent_interval, args.live,
+                         args=(args.profile, args.expiry, args.agent_interval, args.live,
                                args.arm, not args.no_veto), daemon=True),
         threading.Thread(target=_monitor_thread,
                          args=(args.profile, args.monitor_interval, args.live, args.arm,
