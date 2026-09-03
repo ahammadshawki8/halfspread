@@ -63,7 +63,7 @@ When the ledger once showed P&L that had not happened, the bug, the removal and 
 
 - **Trading API** — multi-leg (`mleg`) packages, two-leg verticals and four-leg condors, all legs covered within one order for Level 3.
 - **CLI** — the agent's hands. Every broker action is an `alpaca` invocation recorded verbatim and replayable by hand.
-- **MCP server** — the window onto the desk (`.mcp.json`). Nothing executes through it.
+- **MCP server** — the window onto the desk (`.mcp.json`), served through a stdio proxy that *enforces* read-only. Alpaca's toolset filter does not remove the order-placing tools, so `agent/mcp_readonly.py` strips every mutating tool from `tools/list` and refuses a call to one by name: **11 of 35 blocked, 24 reads pass through** (`python -m agent.mcp_readonly --audit`).
 - **Market Data API** — chains, snapshots, news, and the intraday bar history behind the empirical distribution.
 
 A note on the data: options quotes come from Alpaca's **indicative** feed, not OPRA. Every cost figure here is the cost this account was actually charged on that feed, which is also the feed paper fills are simulated against — the accounting is internally consistent. It is not a claim about the OPRA market spread, and where that distinction matters this project says so rather than rounding it away.

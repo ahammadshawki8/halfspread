@@ -252,6 +252,15 @@ churning on modelled edge inside the noise of our own vol estimate.
 Holding through a breach is journalled (`hold_through_breach`) with its arithmetic, so a
 decision **not** to act is as visible as one to act.
 
+### 5.6 Reproducibility and enforcement
+
+- `python -m agent.verify` — re-derives every published claim from the committed journal
+  with **no key, no network, no account**; exits non-zero if any fails. 9 checks.
+- `python -m unittest discover -s tests` — **37 tests**, including regressions for the two
+  bugs that reached production (mleg limit sign; condor max loss = wider wing only).
+- `.github/workflows/tests.yml` runs both on every push, credential-free.
+- `python -m agent.mcp_readonly --audit` — shows the 11 blocked / 24 allowed split.
+
 ### Alpaca CLI command map
 ```
 alpaca profile login [--api-key]     # OAuth (paper-only) or API keys
@@ -460,10 +469,12 @@ halfspread/
 ### Tier 6 — MCP layer ✅ COMPLETE
 - [x] `.mcp.json` — Alpaca's official MCP server (v3.4.7) as the inspection window
 - [x] Verified over stdio: initialises with COMP credentials, exposes **35 tools**
-- [x] ⚠️ **Honest caveat recorded in `.mcp.json`:** the toolset filter does *not* remove
-      `place_option_order` — order-placing tools are built-in overrides, not spec-driven
-      operations. MCP is read-only *by convention*, not by enforcement. The real guarantee
-      is `execute.py` refusing COMP without the arming token, plus the journal.
+- [x] **Read-only is now ENFORCED, not conventional.** `agent/mcp_readonly.py` is a stdio
+      proxy in front of the real server: it strips mutating tools from `tools/list` and
+      refuses `tools/call` on one by name. Alpaca's `ALPACA_TOOLSETS` filter does *not*
+      remove `place_option_order` (built-in overrides, not spec-driven operations), so the
+      proxy is what makes the guarantee real. Verified: **11 of 35 blocked, 24 allowed**.
+      `python -m agent.mcp_readonly --audit`
 
 ### Tier 7 — Submission (only on owner's instruction)
 - [ ] Repo README · one-page write-up · audit scorecard vs arXiv:2606.08285 · cover image · slides · video · social posts
