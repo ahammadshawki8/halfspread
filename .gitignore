@@ -1,0 +1,24 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# alpaca cli binary (downloaded, not vendored)
+bin/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# scratch
+*.tmp
+*.log
