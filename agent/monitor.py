@@ -11,6 +11,7 @@ against the exit we would otherwise not have taken.
 from __future__ import annotations
 
 import argparse
+import math
 import signal
 import sys
 import time
@@ -18,7 +19,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
-from . import chain, cli, config, execute, journal, risk
+from . import chain, cli, config, execute, journal, pricing, risk
 
 ET = ZoneInfo("America/New_York")
 _stop = False
@@ -121,6 +122,54 @@ def current_close_cost(sp: OpenSpread, profile: str) -> dict | None:
     }
 
 
+def worth_closing(sp: OpenSpread, spot: float, close_cost: dict, profile: str) -> tuple[bool, dict]:
+    """Decide whether closing beats holding, in dollars.
+
+    A distance trigger alone is the wrong rule for a defined-risk spread. The
+    loss is already capped, and by the time a short strike is threatened the
+    exit spread has widened to several times what it cost to get in - so a
+    trigger-happy close pays the very cost this agent exists to avoid, in order
+    to escape a loss that was bounded from the start.
+
+    The honest comparison is: what does buying the package back cost right now,
+    against what we expect to pay at settlement if we hold? Close only when the
+    market is charging less than the expected terminal intrinsic. That is the
+    same net-of-cost test the entry uses, pointed the other way.
+    """
+    T = pricing.year_fraction(chain.expiry_close_utc(sp.expiry))
+    r = config.RISK_FREE_RATE
+    forward = spot * math.exp(r * T)
+
+    short_mid = (close_cost["short_bid"] + close_cost["short_ask"]) / 2
+    iv = pricing.implied_vol(short_mid, spot, sp.short_strike, T, r, "put")
+    if iv is None:
+        # Cannot price it, so fall back to the distance rule.
+        return True, {"basis": "unpriceable, distance rule applied"}
+
+    from .cost import _expected_put_payoff
+    expected_intrinsic = (
+        _expected_put_payoff(sp.short_strike, forward, T, iv)
+        - _expected_put_payoff(sp.long_strike, forward, T, iv)
+    )
+    expected_settlement_cost = expected_intrinsic * 100 * sp.qty
+    cost_to_close_now = close_cost["debit_to_close"] * 100 * sp.qty
+    advantage = expected_settlement_cost - cost_to_close_now
+
+    # Require the advantage to be material. Closing for a couple of dollars of
+    # modelled edge is churn: it pays a real, widened spread to chase a number
+    # inside the noise of our own vol estimate.
+    margin = max(25.0, 0.25 * cost_to_close_now)
+
+    return advantage > margin, {
+        "basis": "net-of-cost",
+        "materiality_margin": round(margin, 2),
+        "implied_vol": round(iv, 4),
+        "expected_settlement_cost": round(expected_settlement_cost, 2),
+        "cost_to_close_now": round(cost_to_close_now, 2),
+        "advantage_of_closing": round(advantage, 2),
+    }
+
+
 def check(profile: str, threshold_pct: float, live: bool, arm: str | None) -> list[dict]:
     spreads = open_spreads(profile)
     if not spreads:
@@ -151,7 +200,23 @@ def check(profile: str, threshold_pct: float, live: bool, arm: str | None) -> li
         journal.write("monitor", **rec)
         results.append(rec)
 
-        if breached and live:
+        if breached and close_cost:
+            should, basis = worth_closing(sp, spot, close_cost, profile)
+            rec.update({"close_decision": basis, "would_close": should})
+            journal.write("pin_breach", underlying=sp.underlying,
+                          spread=rec["spread"], qty=sp.qty, spot=round(spot, 3),
+                          distance_to_short_pct=distance, would_close=should, **basis)
+            if should and live:
+                _emergency_close(sp, close_cost, spot, distance, profile, arm)
+            elif not should:
+                journal.write(
+                    "hold_through_breach",
+                    underlying=sp.underlying, spread=rec["spread"], qty=sp.qty,
+                    reason=("closing costs more than the loss it avoids; the position "
+                            "is defined-risk and settling is still cheaper"),
+                    **basis,
+                )
+        elif breached and live:
             _emergency_close(sp, close_cost, spot, distance, profile, arm)
     return results
 
