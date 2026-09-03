@@ -172,6 +172,41 @@ XSP is unusable: **15–25% half-spread even at the money.**
 **But the agent evaluates SPY, XSP and SPXW every cycle on net EV and journals the comparison**, letting measurement pick the winner. Same code path, keeps index options in play, and the comparison table is itself a demo asset.
 Caveat: SPY is American-style and physically settled, so an ITM finish means assignment. That only bites when the short strike is breached — precisely the case where we would already be closing.
 
+### 5.3 Live-trading findings (2026-09-03, market open)
+
+**mleg limit price is signed from the package's point of view.**
+POSITIVE = maximum net **debit** you will pay. NEGATIVE = minimum net **credit** you require.
+Proven: an order at `+0.16` filled at `-0.12` (behaved as a debit ceiling, i.e. a market order);
+`-0.60` was accepted and correctly rested unfilled; `-0.08` filled at exactly `-0.08`.
+**Credit spreads must be submitted negative.** `build_payload` now forces the sign.
+
+**Decision-to-execution drift is larger than the bid-ask.** Scanning the universe takes seconds
+and the market moves inside that window. One order: scan priced the credit at 0.13, a re-quote
+seconds later showed 0.08 — **$5/contract of drift against a $1.00 bid-ask cost.** `execute.requote()`
+now re-reads both legs immediately before submitting, sets the limit from those quotes, and
+journals the drift.
+
+**The edge is thin, and the write-up must say so.** Audited live candidates need breakeven win
+rates of **83–97%** against modelled P(win) of **73–92%**. On a binary max-profit/max-loss view
+almost every candidate is marginal or negative. The positive net EV the model reports comes from
+the `VRP_HAIRCUT` assumption plus the continuous payoff between strikes — an assumption, not an
+observation. **This is Vilkov's result reproducing in live quotes**, and it is the honest headline,
+not something to hide.
+
+**The veto scales size; it does not abstain.** It blocked a COMP entry over Strait of Hormuz
+attacks and US-Iran escalation. Headlines real, response disproportionate: the position is already
+defined-risk with a hard dollar cap, so the tail it feared was the one the structure had bounded.
+Blocks are now converted to `VETO_FLOOR = 0.25` and logged as conversions.
+
+**First COMP position (13:41 UTC):** SPY 765/763 put credit spread x3, short 765P @ 0.21,
+long 763P @ 0.11, filled at exactly the -0.10 limit. Credit $30, max loss $567, SPY 769.51.
+Order `81fd990e-a76b-4f7f-bba0-19d5c43e4d04`.
+
+**Expected P&L is small and that is structural.** Credit/width runs 5-9%, so max profit is 5-9%
+of max loss. A meaningful dollar P&L would need 6-10% of the account at risk; sizing for
+survivability (1.4%/day cap) caps the day around +0.1-0.3%. Do not crank risk to chase a
+headline number - a red account poisons every other criterion.
+
 ### Alpaca CLI command map
 ```
 alpaca profile login [--api-key]     # OAuth (paper-only) or API keys
