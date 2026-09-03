@@ -172,6 +172,16 @@ XSP is unusable: **15–25% half-spread even at the money.**
 **But the agent evaluates SPY, XSP and SPXW every cycle on net EV and journals the comparison**, letting measurement pick the winner. Same code path, keeps index options in play, and the comparison table is itself a demo asset.
 Caveat: SPY is American-style and physically settled, so an ITM finish means assignment. That only bites when the short strike is breached — precisely the case where we would already be closing.
 
+### 5.2b MCP inspection window
+
+`uvx alpaca-mcp-server` (v3.4.7), configured in `.mcp.json`, pointed at COMP with
+`ALPACA_TOOLSETS=account,trading,assets,news`. Keys come from the environment; nothing
+is committed. Verified by speaking MCP over stdio directly.
+
+**CLI is the agent's hands, MCP is the window.** Every order the agent places is an
+`alpaca` invocation recorded verbatim in the journal and replayable by hand. Nothing is
+executed through MCP.
+
 ### 5.3 Live-trading findings (2026-09-03, market open)
 
 **mleg limit price is signed from the package's point of view.**
@@ -412,8 +422,13 @@ halfspread/
 - [x] **GitHub Pages live: https://ahammadshawki8.github.io/halfspread/**
 - [ ] Re-verify rendering once real trades populate it
 
-### Tier 6 — MCP layer
-- [ ] Alpaca MCP server configured (`uvx alpaca-mcp-server`) as the judge's read-only window
+### Tier 6 — MCP layer ✅ COMPLETE
+- [x] `.mcp.json` — Alpaca's official MCP server (v3.4.7) as the inspection window
+- [x] Verified over stdio: initialises with COMP credentials, exposes **35 tools**
+- [x] ⚠️ **Honest caveat recorded in `.mcp.json`:** the toolset filter does *not* remove
+      `place_option_order` — order-placing tools are built-in overrides, not spec-driven
+      operations. MCP is read-only *by convention*, not by enforcement. The real guarantee
+      is `execute.py` refusing COMP without the arming token, plus the journal.
 
 ### Tier 7 — Submission (only on owner's instruction)
 - [ ] Repo README · one-page write-up · audit scorecard vs arXiv:2606.08285 · cover image · slides · video · social posts
