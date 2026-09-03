@@ -151,13 +151,16 @@ def main(argv: list[str] | None = None) -> int:
             publish.OUT.parent.mkdir(parents=True, exist_ok=True)
             import json as _json
             publish.OUT.write_text(_json.dumps(payload, indent=2, default=str), encoding="utf-8")
+            # The README carries the same measured figures, so it has to move
+            # with the dashboard or the two start disagreeing.
+            publish.refresh_readme(payload)
         except Exception as exc:
             _log("publish", f"payload failed: {type(exc).__name__}: {exc}")
             return
         if not args.push:
             return
         for cmd in (
-            ["git", "add", "-A", "docs", "data/journal"],
+            ["git", "add", "-A", "docs", "data/journal", "README.md"],
             ["git", "-c", "user.name=ahammadshawki8",
              "-c", "user.email=ahammadshawki8@users.noreply.github.com",
              "commit", "-q", "-m", "Session update: journal and dashboard"],
