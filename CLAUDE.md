@@ -188,6 +188,23 @@ alpaca api <METHOD> <path>           # raw escape hatch -> REQUIRED for mleg ord
 Global flags: `--jq`, `--csv`, `--quiet`, `--schema`, `--debug`. JSON on stdout by default.
 ⚠️ **The CLI fires immediately — there are no confirmation prompts.**
 
+⚠️ **Git Bash mangles API paths.** `alpaca api POST /v2/orders` becomes
+`https://paper-api.alpaca.markets/C:/Program Files/Git/v2/orders` → 404. Export
+`MSYS_NO_PATHCONV=1` for any shell call. Python's `subprocess` is unaffected, so
+`agent/cli.py` does not need it.
+
+⚠️ **Console encoding.** The Windows console is cp1252; printing non-ASCII raises
+`UnicodeEncodeError`. Keep CLI output ASCII, or run with `PYTHONIOENCODING=utf-8`.
+
+**Verified mleg payload for a put credit spread** (limit price is the net credit as a
+*positive* number; Alpaca infers direction from the legs):
+```json
+{"order_class":"mleg","qty":"5","type":"limit","time_in_force":"day",
+ "limit_price":"0.19",
+ "legs":[{"symbol":"SPY260903P00759000","side":"sell","ratio_qty":"1","position_intent":"sell_to_open"},
+         {"symbol":"SPY260903P00757000","side":"buy","ratio_qty":"1","position_intent":"buy_to_open"}]}
+```
+
 ---
 
 ## 6. Architecture
@@ -298,22 +315,31 @@ halfspread/
 - [x] Greeks/IV availability checked — **NOT available** (see §5.1)
 - [x] Measured real bid/ask widths across moneyness → instrument decision made (§5.1)
 
-### Tier 1 — Read-only data layer
-- [ ] `cli.py` — CLI wrapper, JSON parse, invocation logging
-- [ ] `chain.py` — chain fetch, DTE + delta filtering
-- [ ] `cost.py` — half-spread measurement + net-EV calculation
-- [ ] `journal.py` — append-only JSONL
-- [ ] Prove it: dump a live chain with measured costs, no orders placed
+### Tier 1 — Read-only data layer ✅ COMPLETE
+- [x] `cli.py` — CLI wrapper, JSON parse, invocation logging
+- [x] `pricing.py` — Black-Scholes, IV solve, greeks (feed supplies none)
+- [x] `chain.py` — OCC parsing, chain fetch, put-call-parity forward
+- [x] `cost.py` — half-spread measurement + net-EV + admissibility gates
+- [x] `journal.py` — append-only JSONL, fsynced
+- [x] `scan.py` — read-only ranking. **Proved: 115 candidates priced, 16 admissible.**
+- [x] `observe.py` — intraday widening recorder (measures the exit-cost claim)
 
-### Tier 2 — Decision layer (dry run, no execution)
-- [ ] `strategy.py` — candidate construction + ranking
-- [ ] `risk.py` — ES sizing, limits, pin-risk gate
-- [ ] Dry-run cycle producing a fully-costed trade proposal + journalled refusals
+### Tier 2 — Decision layer ✅ COMPLETE
+- [x] Candidate construction + ranking (in `scan.py`, ranked by return on risk)
+- [x] `risk.py` — sizing against max loss, daily budget, concurrency cap, pin-risk helper
+- [x] Dry-run cycle producing a fully-costed proposal + journalled refusals
 
-### Tier 3 — Execution (DEV account first)
-- [ ] `execute.py` — mleg build + submit via `alpaca api POST /v2/orders`
-- [ ] Place a real DEV paper spread end-to-end; confirm fill and journal
-- [ ] Verify the mleg "all legs covered" constraint is satisfied by our builder
+### Tier 3 — Execution ✅ CORE COMPLETE
+- [x] `execute.py` — mleg build + submit via `alpaca api POST /v2/orders`
+- [x] **mleg verified accepted on DEV** (order 561d6b22, status `accepted`, then cancelled)
+- [x] mleg "all legs covered" constraint satisfied — a 2-leg vertical passes
+- [x] COMP arming guard verified: submitting to COMP without the token raises
+- [ ] Live fill during market hours (blocked until 13:30 UTC)
+
+### Tier 3.5 — Orchestration (IN PROGRESS)
+- [ ] `run.py` — preflight → scan → size → execute → journal, one cycle and a loop
+- [ ] `monitor.py` — pin-risk watch, emergency close booked as a cost event
+- [ ] `settle.py` — expiry accounting, zero-exit-cost proof, counterfactual
 
 ### Tier 4 — Live run on COMP
 - [ ] COMP account created ($100,000 exactly), keys loaded, **never touched by hand**
@@ -338,6 +364,7 @@ halfspread/
 
 Newest first. One line per session. Keep it terse.
 
+- **2026-09-03 (session 1, cont.)** — Tiers 1-3 core built and verified. Full pipeline runs end to end on DEV: scan prices 115 candidates and admits 16; best is SPY 759/757 at 0.19 credit, $181 max loss, P(win) 0.897, net EV $4.68; risk sizes it at 5 contracts for $905; mleg payload accepted by Alpaca then cancelled; COMP arming guard confirmed to refuse. Remaining before the 13:30 UTC open: `run.py`, `monitor.py`, `settle.py`.
 - **2026-09-03 (session 1)** — Researched hackathon + ~90 competitors. Killed two candidates (dispersion; Vilkov's rules) on evidence. Locked HALFSPREAD. Installed Alpaca CLI + uv, created repo, wrote CLAUDE.md. DEV + COMP keys loaded and both profiles verified; COMP pristine at $100k. **Tier 0 complete** — index option data available, greeks NOT available (we compute our own), and the measured cost curve (§5.1 Finding 3) reshaped strike selection from delta-target to net-EV maximisation. Next: Tier 1.
 
 ---
