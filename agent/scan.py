@@ -12,7 +12,7 @@ import argparse
 import sys
 from datetime import datetime, timezone
 
-from . import chain, config, cost, journal, pricing
+from . import chain, condor, config, cost, journal, pricing
 
 
 def scan_underlying(
@@ -21,13 +21,19 @@ def scan_underlying(
     scale = config.SPOT_SCALE.get(underlying, 1.0)
     widths = widths or [w * scale for w in config.SPREAD_WIDTHS]
 
-    spot_equiv, source, puts, _calls = chain.reference_level(underlying, expiry, profile=profile)
+    spot_equiv, source, puts, calls = chain.reference_level(underlying, expiry, profile=profile)
     chain.remember_center(underlying, spot_equiv)
 
     T = pricing.year_fraction(chain.expiry_close_utc(expiry))
-    candidates = cost.build_candidates(puts, underlying, expiry, widths)
 
-    evals = [e for e in (cost.evaluate(c, spot_equiv, T) for c in candidates) if e]
+    # Verticals and condors are scored onto the same shape and compete on one
+    # ranking, so the structure is chosen by measurement rather than by taste.
+    verticals = cost.build_candidates(puts, underlying, expiry, widths)
+    condors = condor.build_candidates(puts, calls, underlying, expiry, spot_equiv, widths)
+    candidates = len(verticals) + len(condors)
+
+    evals = [e for e in (cost.evaluate(c, spot_equiv, T) for c in verticals) if e]
+    evals += [e for e in (condor.evaluate(c, spot_equiv, T) for c in condors) if e]
     admissible = [e for e in evals if e.admissible]
     # Capital, not headline EV, is the binding constraint, so rank by return
     # on risk among the candidates that survived the gates.
@@ -40,8 +46,10 @@ def scan_underlying(
         reference_level=round(spot_equiv, 4),
         reference_source=source,
         time_to_expiry_years=round(T, 8),
-        contracts_seen=len(puts),
-        candidates_built=len(candidates),
+        contracts_seen=len(puts) + len(calls),
+        candidates_built=candidates,
+        verticals_built=len(verticals),
+        condors_built=len(condors),
         candidates_priced=len(evals),
         candidates_admissible=len(admissible),
         rejections=_rejection_tally(evals),
@@ -87,14 +95,15 @@ def cost_curve(underlying: str, expiry: str, profile: str) -> list[dict]:
 
 def _fmt_table(evals: list[cost.Evaluation], top: int) -> str:
     head = (
-        f"{'under':<6} {'short':>8} {'long':>8} {'%OTM':>6} {'delta':>6} "
+        f"{'under':<6} {'struct':<6} {'short':>8} {'long':>8} {'%OTM':>6} {'delta':>6} "
         f"{'credit':>7} {'entry$':>7} {'cost%':>6} {'exit$':>7} "
         f"{'maxL$':>7} {'P(win)':>7} {'netEV$':>8} {'naive$':>8} {'RoR':>7}"
     )
     lines = [head, "-" * len(head)]
     for e in evals[:top]:
         lines.append(
-            f"{e.underlying:<6} {e.short_strike:>8.0f} {e.long_strike:>8.0f} "
+            f"{e.underlying:<6} {('IC' if e.structure=='iron_condor' else 'PCS'):<6} "
+            f"{e.short_strike:>8.0f} {e.long_strike:>8.0f} "
             f"{e.moneyness_pct:>6.2f} {e.delta_short:>6.3f} "
             f"{e.credit_fill:>7.2f} {e.entry_cost:>7.2f} {e.entry_cost_pct_of_credit:>5.1f}% "
             f"{e.exit_cost_if_closed:>7.2f} {e.max_loss:>7.0f} {e.prob_max_profit:>7.3f} "

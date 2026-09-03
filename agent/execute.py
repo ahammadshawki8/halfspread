@@ -53,26 +53,27 @@ def build_payload(ev: Evaluation, qty: int, limit_price: float | None = None) ->
     if credit <= 0:
         raise ValueError(f"credit must be positive, got {credit}")
 
+    if ev.legs:
+        legs = [
+            {"symbol": l["symbol"], "side": l["side"], "ratio_qty": "1",
+             "position_intent": l["position_intent"]}
+            for l in ev.legs
+        ]
+    else:
+        legs = [
+            {"symbol": ev.short_symbol, "side": "sell", "ratio_qty": "1",
+             "position_intent": "sell_to_open"},
+            {"symbol": ev.long_symbol, "side": "buy", "ratio_qty": "1",
+             "position_intent": "buy_to_open"},
+        ]
+
     return {
         "order_class": "mleg",
         "qty": str(qty),
         "type": "limit",
         "time_in_force": "day",
         "limit_price": f"{-abs(credit):.2f}",
-        "legs": [
-            {
-                "symbol": ev.short_symbol,
-                "side": "sell",
-                "ratio_qty": "1",
-                "position_intent": "sell_to_open",
-            },
-            {
-                "symbol": ev.long_symbol,
-                "side": "buy",
-                "ratio_qty": "1",
-                "position_intent": "buy_to_open",
-            },
-        ],
+        "legs": legs,
     }
 
 
@@ -110,29 +111,40 @@ def requote(ev: Evaluation, profile: str) -> dict | None:
     so the limit is set from quotes taken seconds before the order goes out
     and the difference is journalled as decision-to-execution slippage.
     """
+    if ev.legs:
+        spec = [(l["symbol"], l["side"]) for l in ev.legs]
+    else:
+        spec = [(ev.short_symbol, "sell"), (ev.long_symbol, "buy")]
+
     try:
         payload = cli.run(
             "data", "option", "snapshot",
-            "--symbols", f"{ev.short_symbol},{ev.long_symbol}",
+            "--symbols", ",".join(sym for sym, _ in spec),
             "--feed", config.OPTION_FEED, profile=profile, journal_kind=None,
         )
     except Exception:
         return None
     snaps = (payload or {}).get("snapshots") or {}
-    s = (snaps.get(ev.short_symbol) or {}).get("latestQuote") or {}
-    l = (snaps.get(ev.long_symbol) or {}).get("latestQuote") or {}
-    s_bid, s_ask = float(s.get("bp") or 0), float(s.get("ap") or 0)
-    l_bid, l_ask = float(l.get("bp") or 0), float(l.get("ap") or 0)
-    if s_ask <= 0 or l_ask <= 0:
-        return None
-    credit_now = s_bid - l_ask
-    credit_mid_now = ((s_bid + s_ask) / 2) - ((l_bid + l_ask) / 2)
+
+    credit_now = credit_mid_now = 0.0
+    quotes = {}
+    for sym, side in spec:
+        q = (snaps.get(sym) or {}).get("latestQuote") or {}
+        bid, ask = float(q.get("bp") or 0), float(q.get("ap") or 0)
+        if ask <= 0:
+            return None
+        quotes[sym] = {"bid": bid, "ask": ask}
+        mid = (bid + ask) / 2
+        # Sell the shorts at the bid, buy the longs at the ask.
+        credit_now += bid if side == "sell" else -ask
+        credit_mid_now += mid if side == "sell" else -mid
+
     return {
         "credit_fill_now": round(credit_now, 4),
         "credit_mid_now": round(credit_mid_now, 4),
         "entry_cost_now": round((credit_mid_now - credit_now) * 100, 2),
         "drift_vs_scan": round((credit_now - ev.credit_fill) * 100, 2),
-        "short_bid": s_bid, "short_ask": s_ask, "long_bid": l_bid, "long_ask": l_ask,
+        "quotes": quotes,
     }
 
 

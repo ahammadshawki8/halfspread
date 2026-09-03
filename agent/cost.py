@@ -110,6 +110,12 @@ class Evaluation:
     admissible: bool
     reject_reason: str | None
 
+    # Verticals and condors compete on one ranking, so both fill this shape.
+    # For a condor `short_strike`/`long_strike` are the two SHORT strikes and
+    # `legs` carries the full four-leg package.
+    structure: str = "put_credit_spread"
+    legs: tuple = ()
+
 
 def _expected_put_payoff(K: float, F: float, T: float, sigma: float) -> float:
     """E[max(K - S_T, 0)] under a lognormal terminal distribution with mean F.

@@ -58,14 +58,25 @@ def preflight(profile: str, require_open: bool = True) -> dict:
     return state
 
 
-def choose(expiry: str, profile: str) -> tuple[cost.Evaluation | None, list[cost.Evaluation]]:
-    """Scan the whole universe and return the best admissible candidate."""
+def choose(
+    expiries: list[str], profile: str
+) -> tuple[cost.Evaluation | None, list[cost.Evaluation]]:
+    """Scan every underlying across every candidate expiry and return the best.
+
+    The expiry is a decision, not a default. Measured live on 2026-09-03 at
+    14:00 UTC, every admissible same-day candidate had negative net EV with six
+    hours to run, while the next session's expiry was positive across the board
+    - there is simply more time value to sell. Letting the ranking pick the
+    expiry, rather than always reaching for 0DTE, is the same discipline the
+    rest of the agent applies to strikes.
+    """
     everything: list[cost.Evaluation] = []
-    for u in sorted(config.UNIVERSE, key=lambda x: x != "SPY"):
-        try:
-            everything.extend(scan.scan_underlying(u, expiry, profile))
-        except Exception as exc:
-            journal.write("scan_error", underlying=u, expiry=expiry, error=str(exc))
+    for expiry in expiries:
+        for u in sorted(config.UNIVERSE, key=lambda x: x != "SPY"):
+            try:
+                everything.extend(scan.scan_underlying(u, expiry, profile))
+            except Exception as exc:
+                journal.write("scan_error", underlying=u, expiry=expiry, error=str(exc))
     if not everything:
         return None, []
     everything.sort(key=lambda e: e.return_on_risk, reverse=True)
@@ -84,16 +95,20 @@ def cycle(
     state = preflight(profile, require_open=require_open)
 
     if expiry is None:
-        days = chain.next_expiries(2, profile=profile)
+        days = chain.next_expiries(3, profile=profile)
         if not days:
             raise Preflight("calendar returned no trading days")
-        # After the 0DTE cutoff, today's expiry can no longer be opened.
-        expiry = days[1] if state["past_odte_cutoff"] and len(days) > 1 else days[0]
+        # After the 0DTE cutoff today's expiry can no longer be opened.
+        expiries = days[1:3] if state["past_odte_cutoff"] else days[0:2]
+    else:
+        expiries = [expiry]
 
-    best, all_evals = choose(expiry, profile)
+    best, all_evals = choose(expiries, profile)
     if best is None:
-        journal.write("no_trade", reason="no admissible candidate", expiry=expiry)
-        return {"action": "no_trade", "reason": "no admissible candidate", "expiry": expiry}
+        journal.write("no_trade", reason="no admissible candidate", expiries=expiries)
+        return {"action": "no_trade", "reason": "no admissible candidate",
+                "expiries": expiries}
+    expiry = best.expiry
 
     positions = cli.positions(profile=profile)
     sizing = risk.size(best, positions)
@@ -110,7 +125,7 @@ def cycle(
     veto = llm.event_risk_veto(
         context=(
             f"{best.underlying} reference ~{best.short_strike / (1 + best.moneyness_pct / 100):.0f}, "
-            f"0DTE-style put credit spread short {best.short_strike:g} / long {best.long_strike:g}, "
+            f"{best.structure} at {best.short_strike:g}/{best.long_strike:g}, "
             f"expiry {expiry}, held to settlement, {qty} contracts, "
             f"max loss ${sizing.max_loss_total:.0f} on a ${state['equity']:.0f} account. "
             f"Now {state['now_et']} ET."
@@ -141,7 +156,7 @@ def cycle(
         "order_id": result.order_id,
         "status": result.status,
         "qty": qty_after,
-        "candidate": f"{best.underlying} {best.short_strike:g}/{best.long_strike:g}",
+        "candidate": f"{best.underlying} {best.structure} {best.short_strike:g}/{best.long_strike:g}",
         "credit_fill": best.credit_fill,
         "entry_cost": best.entry_cost,
         "max_loss_total": round(best.max_loss * qty_after, 2),
