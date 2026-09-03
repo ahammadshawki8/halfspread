@@ -486,6 +486,21 @@ terminal with rounded cards; this reads as a paper instead.
 - [x] **GitHub Pages live: https://ahammadshawki8.github.io/halfspread/**
 - [ ] Re-verify rendering once real trades populate it
 
+### 5.8 The page has to be operable, not just readable
+
+Owner's critique, and it was correct: the site reported results and gave nobody a way to use
+anything. "Demonstrates the agent in action" is a judging criterion, and a report of past
+trades does not meet it.
+
+`docs/engine.js` ports `pricing.py`, `cost.py` and the risk gates to the browser: Black-Scholes,
+implied-vol solve, greeks, expected terminal payoff, and the measured breach distribution thinned
+to a percentile lookup. `publish.py` now ships the **live chain** (bid/ask per strike, per
+underlying, per expiry), the **gate thresholds** and the **thinned empirical samples**, so the
+page can price a trade the visitor invents against real quotes.
+
+**Keep these in step.** If a gate or a formula changes in Python, change it in `engine.js` too,
+or the page starts lying about what the desk would do. The port is the risk; the payload is ~111 KB.
+
 ### Tier 6 - MCP layer [done] COMPLETE
 - [x] `.mcp.json` - Alpaca's official MCP server (v3.4.7) as the inspection window
 - [x] Verified over stdio: initialises with COMP credentials, exposes **35 tools**

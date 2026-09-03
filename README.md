@@ -27,6 +27,21 @@ Two consequences the agent is built around:
 
 There is a third finding it did not want: **the edge is thin.** Admitted candidates need breakeven win rates of 83-97% against modelled win probabilities of 73-92%. That is Vilkov's 2026 result reproducing in live quotes, and it is why this agent is sized to survive rather than to produce a headline number.
 
+## Use it
+
+**[Price a trade yourself](https://ahammadshawki8.github.io/halfspread/#try)** on the live page.
+Pick a strike and a width against the chain the desk is trading right now, and the same engine
+that decides its orders runs in your browser: credit at mid against credit you can actually fill,
+what crossing in costs, what leaving would cost at this moment, the win probability from both the
+model and 668 measured sessions, and every gate with the arithmetic that passed or failed it.
+"Find the best one" ranks every combination the chain supports.
+
+Most combinations are rejected. That is the point of it: the engine is useful precisely because
+it says no, and you can watch it say no to a trade you chose rather than one it chose.
+
+`docs/engine.js` is a direct port of `pricing.py`, `cost.py` and the risk gates, so anything the
+page computes can be reproduced by running the Python.
+
 ## Verify it yourself
 
 No API key, no account, no network:

@@ -153,6 +153,45 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
     # ---- widening through the session ------------------------------------
     widening = observe.widening_report()
 
+    # ---- live chains, so the page can price a trade the visitor invents ----
+    # The dashboard reports what the desk did. Without the chain it cannot let
+    # anyone test the reasoning on a trade of their own, which is the only way
+    # to tell a measurement engine apart from a screenshot of one.
+    chains: dict = {}
+    seen_pairs: set = set()
+    for r in reversed(records):
+        if r.get("kind") != "observation":
+            continue
+        key = (r["underlying"], r["expiry"])
+        if key in seen_pairs:
+            continue
+        seen_pairs.add(key)
+        rows = [
+            {"k": row["strike"], "b": row["bid"], "a": row["ask"]}
+            for row in r.get("rows", [])
+            if (row.get("bid") or 0) > 0 and -6.0 <= row["moneyness_pct"] <= 2.0
+        ]
+        if len(rows) < 6:
+            continue
+        chains.setdefault(r["underlying"], {})[r["expiry"]] = {
+            "ts": r["ts"],
+            "spot": r.get("reference_level"),
+            "puts": sorted(rows, key=lambda x: x["k"]),
+        }
+
+    gates = {
+        "min_prob_win": config.MIN_PROB_WIN,
+        "min_credit_to_width": config.MIN_CREDIT_TO_WIDTH,
+        "max_credit_to_width": config.MAX_CREDIT_TO_WIDTH,
+        "min_credit_fill": config.MIN_CREDIT_FILL,
+        "min_max_loss": config.MIN_MAX_LOSS,
+        "max_loss_per_position": config.MAX_LOSS_PER_POSITION,
+        "max_loss_per_day": config.MAX_LOSS_PER_DAY,
+        "min_net_ev": config.MIN_NET_EV,
+        "vrp_haircut": config.VRP_HAIRCUT,
+        "risk_free_rate": config.RISK_FREE_RATE,
+    }
+
     # ---- decisions, newest first -----------------------------------------
     decisions = []
     for r in records:
@@ -271,6 +310,14 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
             "refusals": len(refusals), "journal_records": len(records),
         },
         "spread_story": spread_story,
+        "chains": chains,
+        "gates": gates,
+        # Sorted returns, thinned. A percentile lookup does not need all 668
+        # values per hour and the page should not carry them.
+        "empirical_samples": (
+            {h: [round(x, 5) for x in v[::4]] for h, v in (emp.get("samples") or {}).items()}
+            if emp else {}
+        ),
         "cost_curves": curves,
         "widening": widening,
         "decisions": decisions[:80],
