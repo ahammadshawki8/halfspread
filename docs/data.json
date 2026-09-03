@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-09-03T14:05:06+00:00",
+  "generated_at": "2026-09-03T14:06:20+00:00",
   "account_id": "0509a308-f1ef-44e2-8e8b-8a6d0893f84b",
   "account": {
     "account_number": "PA31RB6YR1V6",
-    "equity": 99937.75,
+    "equity": 99950.75,
     "cash": 100051.75,
     "options_level": 3,
     "starting_equity": 100000.0,
-    "pnl": -62.25
+    "pnl": -49.25
   },
   "ledger": {
     "positions_resolved": 0,
@@ -21,7 +21,7 @@
     "exit_cost_avoided_by_settling": 0,
     "realized_pnl_if_round_tripped": 0,
     "advantage_from_not_exiting": 0,
-    "account_equity": 99937.75
+    "account_equity": 99950.75
   },
   "scan_totals": {
     "scans": 49,
@@ -35,7 +35,7 @@
     "emergency_closes": 0,
     "vetoes": 3,
     "refusals": 4,
-    "journal_records": 988
+    "journal_records": 995
   },
   "cost_curves": {
     "SPY": {
