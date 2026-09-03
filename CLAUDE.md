@@ -217,6 +217,25 @@ of max loss. A meaningful dollar P&L would need 6-10% of the account at risk; si
 survivability (1.4%/day cap) caps the day around +0.1-0.3%. Do not crank risk to chase a
 headline number - a red account poisons every other criterion.
 
+### 5.4 Two bugs that fabricated P&L (fixed 2026-09-03 14:20 UTC)
+
+Caught because the published ledger showed **+$316 realised across 6 "settled" positions**
+while every contract still had six hours to run. Both fixed; the fabricated records were
+removed from the journal and a `journal_correction` entry appended in their place.
+
+1. **`settle()` compared only the expiry DATE against today.** A contract expiring today is
+   not expired until the close, so `expiry > today` was false all session and live positions
+   were resolved hours early against a mid-session price. Same-day expiries now additionally
+   require the market to be **closed**, and an unreachable clock fails closed.
+2. **Journal records were not scoped by profile.** `open_spreads()` matched `order_intent`
+   records from *any* profile against the positions of *one*, so DEV experiments were
+   attributed to COMP. `open_spreads()`, `settle.report()` and `publish.build()` are now all
+   profile-scoped, and settlement/emergency-close records carry their profile.
+
+**Lesson worth keeping:** the dashboard is derived from the journal, so a journal bug becomes
+a published lie. Any figure on that page must be reproducible from a broker call. When a number
+looks good, check it against the account before believing it.
+
 ### Alpaca CLI command map
 ```
 alpaca profile login [--api-key]     # OAuth (paper-only) or API keys

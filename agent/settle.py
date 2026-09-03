@@ -47,12 +47,25 @@ def snapshot_preclose(profile: str) -> list[dict]:
 
 
 def settle(profile: str) -> list[dict]:
-    """Resolve expired spreads against the reference level at expiry."""
+    """Resolve expired spreads against the reference level at expiry.
+
+    A contract expiring today has NOT expired until the close. Comparing only
+    the dates resolves live positions hours early and books P&L that does not
+    exist, so same-day expiries additionally require the market to be shut.
+    """
     results = []
-    today = datetime.now(ET).date().isoformat()
+    now_et = datetime.now(ET)
+    today = now_et.date().isoformat()
+    try:
+        market_open = bool((cli.clock(profile=profile) or {}).get("is_open"))
+    except Exception:
+        # Fail closed: if the clock is unreachable, do not resolve anything.
+        market_open = True
 
     for sp in monitor.open_spreads(profile):
         if sp.expiry > today:
+            continue
+        if sp.expiry == today and market_open:
             continue
 
         try:
@@ -82,6 +95,7 @@ def settle(profile: str) -> list[dict]:
 
         rec = {
             "client_order_id": sp.client_order_id,
+            "profile": profile,
             "underlying": sp.underlying,
             "expiry": sp.expiry,
             "spread": f"{sp.short_strike:g}/{sp.long_strike:g}",
@@ -119,8 +133,12 @@ def report(profile: str = config.PROFILE_DEV) -> dict:
     """The headline: what we made, what the spread cost us, and what settling
     instead of closing was worth."""
     records = journal.read_all()
-    settlements = [r for r in records if r.get("kind") == "settlement"]
-    emergencies = [r for r in records if r.get("kind") == "emergency_close"]
+    # Settlements and closes are per-account. Summing across profiles would
+    # attribute DEV experiments to the competition ledger.
+    settlements = [r for r in records
+                   if r.get("kind") == "settlement" and r.get("profile") == profile]
+    emergencies = [r for r in records
+                   if r.get("kind") == "emergency_close" and r.get("profile") == profile]
 
     def _f(v) -> float:
         return float(v) if isinstance(v, (int, float)) else 0.0

@@ -27,10 +27,16 @@ def _f(v, default=0.0) -> float:
 def build(profile: str = config.PROFILE_COMP) -> dict:
     records = journal.read_all()
 
-    intents = [r for r in records if r.get("kind") == "order_intent" and not r.get("dry_run")]
-    submitted = [r for r in records if r.get("kind") == "order_submitted"]
-    settlements = [r for r in records if r.get("kind") == "settlement"]
-    emergencies = [r for r in records if r.get("kind") == "emergency_close"]
+    # The dashboard reports the COMPETITION account. DEV records live in the
+    # same journal and must not be mixed into it.
+    def _mine(r: dict) -> bool:
+        return r.get("profile") == profile
+
+    intents = [r for r in records
+               if r.get("kind") == "order_intent" and not r.get("dry_run") and _mine(r)]
+    submitted = [r for r in records if r.get("kind") == "order_submitted" and _mine(r)]
+    settlements = [r for r in records if r.get("kind") == "settlement" and _mine(r)]
+    emergencies = [r for r in records if r.get("kind") == "emergency_close" and _mine(r)]
     vetoes = [r for r in records if r.get("kind") == "veto"]
     refusals = [r for r in records if r.get("kind") in ("no_trade", "sizing")
                 and not r.get("approved", True)]
@@ -62,7 +68,7 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
     decisions = []
     for r in records:
         k = r.get("kind")
-        if k == "order_intent" and not r.get("dry_run"):
+        if k == "order_intent" and not r.get("dry_run") and _mine(r):
             ev = r.get("evaluation") or {}
             decisions.append({
                 "ts": r["ts"], "type": "trade",
@@ -74,6 +80,10 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
                     f"max loss ${_f(ev.get('max_loss')):.0f}"
                 ),
             })
+        elif k == "journal_correction":
+            decisions.append({"ts": r["ts"], "type": "correction",
+                              "what": "journal correction",
+                              "detail": str(r.get("reason", ""))})
         elif k == "no_trade":
             decisions.append({"ts": r["ts"], "type": "refusal",
                               "what": "no trade", "detail": str(r.get("reason", ""))})
@@ -83,7 +93,7 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
                 "what": f"veto: {r.get('action')} x{r.get('size_multiplier')}",
                 "detail": f"{r.get('reason','')} {r.get('events') or ''}",
             })
-        elif k == "settlement":
+        elif k == "settlement" and _mine(r):
             decisions.append({
                 "ts": r["ts"], "type": "settle",
                 "what": f"{r.get('underlying')} {r.get('spread')} settled",
@@ -93,7 +103,7 @@ def build(profile: str = config.PROFILE_COMP) -> dict:
                     f"avoided ${_f(r.get('exit_cost_avoided')):.2f}"
                 ),
             })
-        elif k == "emergency_close":
+        elif k == "emergency_close" and _mine(r):
             decisions.append({
                 "ts": r["ts"], "type": "emergency",
                 "what": "emergency close",

@@ -57,7 +57,9 @@ def open_spreads(profile: str) -> list[OpenSpread]:
 
     submitted = {}
     for r in journal.read_all():
-        if r.get("kind") == "order_intent" and not r.get("dry_run"):
+        if (r.get("kind") == "order_intent"
+                and not r.get("dry_run")
+                and r.get("profile") == profile):
             submitted[r.get("client_order_id")] = r
     closed = {
         r.get("client_order_id") for r in journal.read_all()
@@ -193,7 +195,7 @@ def _emergency_close(sp, close_cost, spot, distance, profile, arm) -> None:
     realized = (sp.credit_fill - close_cost["debit_to_close"]) * 100 * sp.qty
     journal.write(
         "emergency_close",
-        client_order_id=sp.client_order_id, order_id=raw.get("id"),
+        client_order_id=sp.client_order_id, profile=profile, order_id=raw.get("id"),
         status=raw.get("status"),
         credit_received=sp.credit_fill, debit_paid=close_cost["debit_to_close"],
         realized_pnl=round(realized, 2),
