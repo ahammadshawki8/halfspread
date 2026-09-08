@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-09-08T00:13:42+00:00",
+  "generated_at": "2026-09-08T17:23:44+00:00",
   "verification": {
-    "passed": 9,
+    "passed": 10,
     "total": 10,
-    "failed": 1,
+    "failed": 0,
     "rows": [
       {
         "ok": true,
         "claim": "The journal exists and is readable.",
-        "evidence": "20875 records across 4 file(s)."
+        "evidence": "21137 records across 4 file(s)."
       },
       {
         "ok": true,
@@ -31,9 +31,9 @@
         "evidence": "SPY median half-spread 1.70% of mid at the money vs 14.29% at 2-3% OTM (8.4x)."
       },
       {
-        "ok": false,
+        "ok": true,
         "claim": "The same strikes were re-quoted through the session and the spread was tracked.",
-        "evidence": "Not enough observations on a single expiry yet."
+        "evidence": "1 SPY observations on the 2026-09-08 expiry; near-the-money half-spread ended at 1.0x its first reading."
       },
       {
         "ok": true,
@@ -57,7 +57,7 @@
       }
     ],
     "facts": {
-      "journal_records": 20875,
+      "journal_records": 21137,
       "orders": 5,
       "requoted": 5,
       "max_abs_drift": 7.0,
@@ -66,9 +66,9 @@
       "half_spread_atm_pct": 1.695,
       "half_spread_far_pct": 14.286,
       "cost_curve_ratio": 8.4,
-      "widening_vs_open": null,
-      "observations": 0,
-      "widening_expiry": null,
+      "widening_vs_open": 1.0,
+      "observations": 1,
+      "widening_expiry": "2026-09-08",
       "refusals": 47,
       "vetoes": 4,
       "settlements": 3,
@@ -153,11 +153,11 @@
   "account_id": "0509a308-f1ef-44e2-8e8b-8a6d0893f84b",
   "account": {
     "account_number": "PA31RB6YR1V6",
-    "equity": 100047.57,
+    "equity": 100113.57,
     "cash": 100128.57,
     "options_level": 3,
     "starting_equity": 100000.0,
-    "pnl": 47.57
+    "pnl": 113.57
   },
   "ledger": {
     "positions_resolved": 3,
@@ -171,7 +171,7 @@
     "exit_cost_avoided_by_settling": 11.0,
     "realized_pnl_if_round_tripped": 81.0,
     "advantage_from_not_exiting": 11.0,
-    "account_equity": 100047.57,
+    "account_equity": 100113.57,
     "exit_cost_at_stake": 24.0,
     "open_positions_priced": 2,
     "settlement_pending_at_broker": true,
@@ -190,7 +190,7 @@
     "emergency_closes": 0,
     "vetoes": 4,
     "refusals": 47,
-    "journal_records": 20872
+    "journal_records": 21121
   },
   "spread_story": {
     "symbol": "SPY 762 put",
@@ -218,8 +218,8 @@
   "chains": {
     "GOOGL": {
       "2026-09-09": {
-        "ts": "2026-09-08T00:10:33.382+00:00",
-        "spot": 338.4391,
+        "ts": "2026-09-08T00:20:40.470+00:00",
+        "spot": 338.4394,
         "puts": [
           {
             "k": 330.0,
@@ -256,8 +256,8 @@
     },
     "AMZN": {
       "2026-09-09": {
-        "ts": "2026-09-08T00:10:33.083+00:00",
-        "spot": 258.5209,
+        "ts": "2026-09-08T00:20:40.161+00:00",
+        "spot": 258.5211,
         "puts": [
           {
             "k": 247.5,
@@ -299,8 +299,8 @@
     },
     "META": {
       "2026-09-09": {
-        "ts": "2026-09-08T00:10:32.594+00:00",
-        "spot": 616.7603,
+        "ts": "2026-09-08T00:20:39.851+00:00",
+        "spot": 616.7608,
         "puts": [
           {
             "k": 585.0,
@@ -438,8 +438,8 @@
     },
     "AMD": {
       "2026-09-09": {
-        "ts": "2026-09-08T00:10:32.321+00:00",
-        "spot": 477.2868,
+        "ts": "2026-09-08T00:20:39.567+00:00",
+        "spot": 477.2872,
         "puts": [
           {
             "k": 450.0,
@@ -522,8 +522,8 @@
     },
     "MSFT": {
       "2026-09-09": {
-        "ts": "2026-09-08T00:10:31.979+00:00",
-        "spot": 499.78,
+        "ts": "2026-09-08T00:20:38.970+00:00",
+        "spot": 499.7804,
         "puts": [
           {
             "k": 480.0,
@@ -590,8 +590,8 @@
     },
     "TSLA": {
       "2026-09-09": {
-        "ts": "2026-09-08T00:10:31.450+00:00",
-        "spot": 354.0154,
+        "ts": "2026-09-08T00:20:38.666+00:00",
+        "spot": 354.0157,
         "puts": [
           {
             "k": 340.0,
@@ -643,8 +643,8 @@
     },
     "AAPL": {
       "2026-09-09": {
-        "ts": "2026-09-08T00:10:30.433+00:00",
-        "spot": 319.9928,
+        "ts": "2026-09-08T00:20:37.750+00:00",
+        "spot": 319.993,
         "puts": [
           {
             "k": 307.5,
@@ -691,8 +691,8 @@
     },
     "IWM": {
       "2026-09-08": {
-        "ts": "2026-09-08T00:10:30.155+00:00",
-        "spot": 295.9219,
+        "ts": "2026-09-08T00:20:37.422+00:00",
+        "spot": 295.9221,
         "puts": [
           {
             "k": 283.0,
@@ -891,8 +891,8 @@
     },
     "QQQ": {
       "2026-09-08": {
-        "ts": "2026-09-08T00:10:29.865+00:00",
-        "spot": 718.9767,
+        "ts": "2026-09-08T00:20:37.314+00:00",
+        "spot": 718.9772,
         "puts": [
           {
             "k": 686.0,
@@ -1346,8 +1346,8 @@
     },
     "SPXW": {
       "2026-09-08": {
-        "ts": "2026-09-08T00:10:29.738+00:00",
-        "spot": 7699.2531,
+        "ts": "2026-09-08T00:20:37.187+00:00",
+        "spot": 7699.2594,
         "puts": [
           {
             "k": 7355.0,
@@ -2251,8 +2251,8 @@
     },
     "XSP": {
       "2026-09-08": {
-        "ts": "2026-09-08T00:10:29.628+00:00",
-        "spot": 769.8718,
+        "ts": "2026-09-08T00:20:37.075+00:00",
+        "spot": 769.8724,
         "puts": [
           {
             "k": 738.0,
@@ -2686,8 +2686,8 @@
     },
     "SPY": {
       "2026-09-08": {
-        "ts": "2026-09-08T00:10:29.355+00:00",
-        "spot": 770.1813,
+        "ts": "2026-09-08T00:20:36.974+00:00",
+        "spot": 770.1819,
         "puts": [
           {
             "k": 736.0,
@@ -3175,61 +3175,61 @@
       "underlying": "META",
       "tradeable": false,
       "expiry": "2026-09-09",
-      "hours_to_expiry": 43.8,
-      "reference": 616.7603,
+      "hours_to_expiry": 43.7,
+      "reference": 616.7608,
       "half_spread_pct": 1.217,
       "strikes": 2,
-      "ts": "2026-09-08T00:10:32.594+00:00"
+      "ts": "2026-09-08T00:20:39.851+00:00"
     },
     {
       "underlying": "SPXW",
       "tradeable": true,
       "expiry": "2026-09-08",
-      "hours_to_expiry": 19.8,
-      "reference": 7699.2531,
+      "hours_to_expiry": 19.7,
+      "reference": 7699.2594,
       "half_spread_pct": 1.226,
       "strikes": 15,
-      "ts": "2026-09-08T00:10:29.738+00:00"
+      "ts": "2026-09-08T00:20:37.187+00:00"
     },
     {
       "underlying": "SPY",
       "tradeable": true,
       "expiry": "2026-09-08",
-      "hours_to_expiry": 19.8,
-      "reference": 770.1813,
+      "hours_to_expiry": 19.7,
+      "reference": 770.1819,
       "half_spread_pct": 1.695,
       "strikes": 8,
-      "ts": "2026-09-08T00:10:29.355+00:00"
+      "ts": "2026-09-08T00:20:36.974+00:00"
     },
     {
       "underlying": "IWM",
       "tradeable": false,
       "expiry": "2026-09-08",
-      "hours_to_expiry": 19.8,
-      "reference": 295.9219,
+      "hours_to_expiry": 19.7,
+      "reference": 295.9221,
       "half_spread_pct": 2.222,
       "strikes": 3,
-      "ts": "2026-09-08T00:10:30.155+00:00"
+      "ts": "2026-09-08T00:20:37.422+00:00"
     },
     {
       "underlying": "XSP",
       "tradeable": true,
       "expiry": "2026-09-08",
-      "hours_to_expiry": 19.8,
-      "reference": 769.8718,
+      "hours_to_expiry": 19.7,
+      "reference": 769.8724,
       "half_spread_pct": 3.158,
       "strikes": 7,
-      "ts": "2026-09-08T00:10:29.628+00:00"
+      "ts": "2026-09-08T00:20:37.075+00:00"
     },
     {
       "underlying": "QQQ",
       "tradeable": false,
       "expiry": "2026-09-08",
-      "hours_to_expiry": 19.8,
-      "reference": 718.9767,
+      "hours_to_expiry": 19.7,
+      "reference": 718.9772,
       "half_spread_pct": 3.165,
       "strikes": 7,
-      "ts": "2026-09-08T00:10:29.865+00:00"
+      "ts": "2026-09-08T00:20:37.314+00:00"
     },
     {
       "underlying": "TSLA",
@@ -3245,11 +3245,11 @@
       "underlying": "MSFT",
       "tradeable": false,
       "expiry": "2026-09-09",
-      "hours_to_expiry": 43.8,
-      "reference": 499.78,
+      "hours_to_expiry": 43.7,
+      "reference": 499.7804,
       "half_spread_pct": 4.361,
       "strikes": 2,
-      "ts": "2026-09-08T00:10:31.979+00:00"
+      "ts": "2026-09-08T00:20:38.970+00:00"
     },
     {
       "underlying": "AAPL",
@@ -4454,8 +4454,8 @@
   },
   "cost_curves": {
     "SPY": {
-      "ts": "2026-09-08T00:10:29.355+00:00",
-      "reference_level": 770.1813,
+      "ts": "2026-09-08T00:20:36.974+00:00",
+      "reference_level": 770.1819,
       "points": [
         {
           "m": -4.438,
@@ -4548,7 +4548,7 @@
           "strike": 750.0
         },
         {
-          "m": -2.49,
+          "m": -2.491,
           "hs": 5.263,
           "mid": 0.095,
           "strike": 751.0
@@ -4584,7 +4584,7 @@
           "strike": 756.0
         },
         {
-          "m": -1.711,
+          "m": -1.712,
           "hs": 20.0,
           "mid": 0.125,
           "strike": 757.0
@@ -4714,8 +4714,8 @@
       "no_bid_from_pct": null
     },
     "XSP": {
-      "ts": "2026-09-08T00:10:29.628+00:00",
-      "reference_level": 769.8718,
+      "ts": "2026-09-08T00:20:37.075+00:00",
+      "reference_level": 769.8724,
       "points": [
         {
           "m": -4.14,
@@ -4748,7 +4748,7 @@
           "strike": 742.0
         },
         {
-          "m": -3.49,
+          "m": -3.491,
           "hs": 50.0,
           "mid": 0.02,
           "strike": 743.0
@@ -4862,7 +4862,7 @@
           "strike": 761.0
         },
         {
-          "m": -1.022,
+          "m": -1.023,
           "hs": 4.545,
           "mid": 0.22,
           "strike": 762.0
@@ -4916,7 +4916,7 @@
           "strike": 770.0
         },
         {
-          "m": 0.147,
+          "m": 0.146,
           "hs": 2.004,
           "mid": 2.245,
           "strike": 771.0
@@ -4962,8 +4962,8 @@
       "no_bid_from_pct": -4.27
     },
     "SPXW": {
-      "ts": "2026-09-08T00:10:29.738+00:00",
-      "reference_level": 7699.2531,
+      "ts": "2026-09-08T00:20:37.187+00:00",
+      "reference_level": 7699.2594,
       "points": [
         {
           "m": -4.471,
@@ -4984,13 +4984,13 @@
           "strike": 7365.0
         },
         {
-          "m": -4.276,
+          "m": -4.277,
           "hs": 46.667,
           "mid": 0.15,
           "strike": 7370.0
         },
         {
-          "m": -4.211,
+          "m": -4.212,
           "hs": 46.667,
           "mid": 0.15,
           "strike": 7375.0
@@ -5086,13 +5086,13 @@
           "strike": 7450.0
         },
         {
-          "m": -3.172,
+          "m": -3.173,
           "hs": 2.222,
           "mid": 0.225,
           "strike": 7455.0
         },
         {
-          "m": -3.107,
+          "m": -3.108,
           "hs": 12.0,
           "mid": 0.25,
           "strike": 7460.0
@@ -5188,13 +5188,13 @@
           "strike": 7535.0
         },
         {
-          "m": -2.068,
+          "m": -2.069,
           "hs": 5.618,
           "mid": 0.445,
           "strike": 7540.0
         },
         {
-          "m": -2.003,
+          "m": -2.004,
           "hs": 9.474,
           "mid": 0.475,
           "strike": 7545.0
@@ -5290,13 +5290,13 @@
           "strike": 7620.0
         },
         {
-          "m": -0.964,
+          "m": -0.965,
           "hs": 3.556,
           "mid": 2.25,
           "strike": 7625.0
         },
         {
-          "m": -0.899,
+          "m": -0.9,
           "hs": 0.963,
           "mid": 2.595,
           "strike": 7630.0
@@ -5398,7 +5398,7 @@
           "strike": 7710.0
         },
         {
-          "m": 0.205,
+          "m": 0.204,
           "hs": 1.315,
           "mid": 25.1,
           "strike": 7715.0
@@ -5480,7 +5480,42 @@
       "no_bid_from_pct": null
     }
   },
-  "widening": {},
+  "widening": {
+    "SPY": {
+      "expiry": "2026-09-08",
+      "first_observation": "2026-09-08T17:23:43.813+00:00",
+      "observations": 1,
+      "baseline": {
+        "-1.0:0.0": 33.333,
+        "-2.0:-1.0": 60.0,
+        "-3.0:-2.0": 100.0,
+        "-5.0:-3.0": 100.0
+      },
+      "series": [
+        {
+          "ts": "2026-09-08T17:23:43.813+00:00",
+          "half_spread_pct": {
+            "-1.0:0.0": 33.333,
+            "-2.0:-1.0": 60.0,
+            "-3.0:-2.0": 100.0,
+            "-5.0:-3.0": 100.0
+          },
+          "vs_open": {
+            "-1.0:0.0": 1.0,
+            "-2.0:-1.0": 1.0,
+            "-3.0:-2.0": 1.0,
+            "-5.0:-3.0": 1.0
+          }
+        }
+      ],
+      "latest_widening": {
+        "-1.0:0.0": 1.0,
+        "-2.0:-1.0": 1.0,
+        "-3.0:-2.0": 1.0,
+        "-5.0:-3.0": 1.0
+      }
+    }
+  },
   "decisions": [
     {
       "ts": "2026-09-04T20:00:05.427+00:00",
