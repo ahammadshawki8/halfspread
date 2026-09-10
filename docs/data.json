@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-10T19:59:13+00:00",
+  "generated_at": "2026-09-10T20:00:28+00:00",
   "verification": {
     "passed": 10,
     "total": 10,
@@ -8,7 +8,7 @@
       {
         "ok": true,
         "claim": "The journal exists and is readable.",
-        "evidence": "35459 records across 6 file(s)."
+        "evidence": "35480 records across 6 file(s)."
       },
       {
         "ok": true,
@@ -43,7 +43,7 @@
       {
         "ok": true,
         "claim": "Positions held to settlement paid no exit spread.",
-        "evidence": "7 settled, total exit cost paid $0.00, exit cost avoided $23.00, realised P&L $182.99."
+        "evidence": "8 settled, total exit cost paid $0.00, exit cost avoided $29.00, realised P&L $248.99."
       },
       {
         "ok": true,
@@ -57,7 +57,7 @@
       }
     ],
     "facts": {
-      "journal_records": 35459,
+      "journal_records": 35480,
       "orders": 9,
       "requoted": 9,
       "max_abs_drift": 13.0,
@@ -71,10 +71,10 @@
       "widening_expiry": "2026-09-10",
       "refusals": 249,
       "vetoes": 4,
-      "settlements": 7,
-      "realized_pnl": 182.99,
+      "settlements": 8,
+      "realized_pnl": 248.99,
       "exit_cost_paid": 0.0,
-      "exit_cost_avoided": 23.0,
+      "exit_cost_avoided": 29.0,
       "empirical_sessions": 668,
       "empirical_bars": 5539,
       "corrections": 1
@@ -153,27 +153,27 @@
   "account_id": "0509a308-f1ef-44e2-8e8b-8a6d0893f84b",
   "account": {
     "account_number": "PA31RB6YR1V6",
-    "equity": 99673.4,
+    "equity": 99688.4,
     "cash": 23978.4,
     "options_level": 3,
     "starting_equity": 100000.0,
-    "pnl": -326.6
+    "pnl": -311.6
   },
   "ledger": {
-    "positions_resolved": 7,
-    "settled_at_expiry": 7,
+    "positions_resolved": 8,
+    "settled_at_expiry": 8,
     "closed_early": 0,
-    "wins": 6,
-    "win_rate": 0.857,
-    "realized_pnl": 182.99,
+    "wins": 7,
+    "win_rate": 0.875,
+    "realized_pnl": 248.99,
     "entry_cost_paid": 41.5,
     "exit_cost_paid": 0.0,
-    "exit_cost_avoided_by_settling": 23.0,
-    "realized_pnl_if_round_tripped": 159.99,
-    "advantage_from_not_exiting": 23.0,
-    "account_equity": 99672.4,
+    "exit_cost_avoided_by_settling": 29.0,
+    "realized_pnl_if_round_tripped": 219.99,
+    "advantage_from_not_exiting": 29.0,
+    "account_equity": 99688.4,
     "exit_cost_at_stake": 9.0,
-    "open_positions_priced": 2,
+    "open_positions_priced": 1,
     "settlement_pending_at_broker": true,
     "credit_received": 291.0,
     "orders_filled": 9
@@ -186,11 +186,11 @@
   "counts": {
     "orders": 9,
     "fills": 9,
-    "settlements": 7,
+    "settlements": 8,
     "emergency_closes": 0,
     "vetoes": 4,
     "refusals": 249,
-    "journal_records": 35456
+    "journal_records": 35477
   },
   "spread_story": null,
   "chains": {
@@ -6566,6 +6566,12 @@
     }
   },
   "decisions": [
+    {
+      "ts": "2026-09-10T20:00:20.119+00:00",
+      "type": "settle",
+      "what": "XSP 757/772 settled",
+      "detail": "P&L $66.00 at 759.225; exit cost paid $0.00, avoided $6.00"
+    },
     {
       "ts": "2026-09-10T17:07:37.771+00:00",
       "type": "trade",
