@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-15T19:56:38+00:00",
+  "generated_at": "2026-09-15T20:00:20+00:00",
   "verification": {
     "passed": 10,
     "total": 10,
@@ -8,7 +8,7 @@
       {
         "ok": true,
         "claim": "The journal exists and is readable.",
-        "evidence": "45517 records across 9 file(s)."
+        "evidence": "45576 records across 9 file(s)."
       },
       {
         "ok": true,
@@ -38,12 +38,12 @@
       {
         "ok": true,
         "claim": "Decisions not to trade are journalled with a specific reason.",
-        "evidence": "397 refusals and 6 non-trivial risk-review outcomes recorded."
+        "evidence": "401 refusals and 6 non-trivial risk-review outcomes recorded."
       },
       {
         "ok": true,
         "claim": "Positions held to settlement paid no exit spread.",
-        "evidence": "11 settled, total exit cost paid $0.00, exit cost avoided $38.00, realised P&L $357.99."
+        "evidence": "12 settled, total exit cost paid $0.00, exit cost avoided $40.00, realised P&L $415.99."
       },
       {
         "ok": true,
@@ -57,7 +57,7 @@
       }
     ],
     "facts": {
-      "journal_records": 45517,
+      "journal_records": 45576,
       "orders": 13,
       "requoted": 13,
       "max_abs_drift": 13.0,
@@ -69,12 +69,12 @@
       "widening_vs_open": 1.286,
       "observations": 26,
       "widening_expiry": "2026-09-15",
-      "refusals": 397,
+      "refusals": 401,
       "vetoes": 6,
-      "settlements": 11,
-      "realized_pnl": 357.99,
+      "settlements": 12,
+      "realized_pnl": 415.99,
       "exit_cost_paid": 0.0,
-      "exit_cost_avoided": 38.0,
+      "exit_cost_avoided": 40.0,
       "empirical_sessions": 668,
       "empirical_bars": 5539,
       "corrections": 1
@@ -153,27 +153,27 @@
   "account_id": "0509a308-f1ef-44e2-8e8b-8a6d0893f84b",
   "account": {
     "account_number": "PA31RB6YR1V6",
-    "equity": 99741.38,
+    "equity": 99808.38,
     "cash": 24081.38,
     "options_level": 3,
     "starting_equity": 100000.0,
-    "pnl": -258.62
+    "pnl": -191.62
   },
   "ledger": {
-    "positions_resolved": 11,
-    "settled_at_expiry": 11,
+    "positions_resolved": 12,
+    "settled_at_expiry": 12,
     "closed_early": 0,
-    "wins": 10,
-    "win_rate": 0.909,
-    "realized_pnl": 357.99,
+    "wins": 11,
+    "win_rate": 0.917,
+    "realized_pnl": 415.99,
     "entry_cost_paid": 52.0,
     "exit_cost_paid": 0.0,
-    "exit_cost_avoided_by_settling": 38.0,
-    "realized_pnl_if_round_tripped": 319.99,
-    "advantage_from_not_exiting": 38.0,
-    "account_equity": 99740.89,
-    "exit_cost_at_stake": 7.5,
-    "open_positions_priced": 2,
+    "exit_cost_avoided_by_settling": 40.0,
+    "realized_pnl_if_round_tripped": 375.99,
+    "advantage_from_not_exiting": 40.0,
+    "account_equity": 99805.38,
+    "exit_cost_at_stake": 2.0,
+    "open_positions_priced": 1,
     "settlement_pending_at_broker": true,
     "credit_received": 409.0,
     "orders_filled": 13
@@ -186,11 +186,11 @@
   "counts": {
     "orders": 13,
     "fills": 13,
-    "settlements": 11,
+    "settlements": 12,
     "emergency_closes": 0,
     "vetoes": 6,
-    "refusals": 397,
-    "journal_records": 45514
+    "refusals": 401,
+    "journal_records": 45573
   },
   "spread_story": null,
   "chains": {
@@ -7892,6 +7892,12 @@
     }
   },
   "decisions": [
+    {
+      "ts": "2026-09-15T20:00:17.221+00:00",
+      "type": "settle",
+      "what": "SPY 756/769 settled",
+      "detail": "P&L $58.00 at 757.42; exit cost paid $0.00, avoided $2.00"
+    },
     {
       "ts": "2026-09-15T17:44:45.388+00:00",
       "type": "trade",
