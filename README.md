@@ -275,8 +275,9 @@ data/journal/    append-only decision record
 data/empirical/  cached intraday distribution
 ```
 
-Runs unattended on GitHub Actions (`.github/workflows/session.yml`), which commits its own journal
-back, so the audit trail is timestamped by git rather than by the agent. No server, no cost.
+Sessions run on GitHub Actions (`.github/workflows/session.yml`), started by hand from the Actions
+tab; the daily schedule is off. A session commits its own journal back, so the audit trail is
+timestamped by git rather than by the agent. No server, no cost.
 
 ---
 
